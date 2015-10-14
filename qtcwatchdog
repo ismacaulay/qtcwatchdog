@@ -1,0 +1,114 @@
+#!/usr/bin/env python
+import os, sys, time
+from argparse import ArgumentParser
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+
+def main():
+   parser = ArgumentParser(description='A file system watcher for QtCreator')
+   parser.add_argument('--init', action='store_true', default=False,
+                       help='Initialize QtCreator files.')
+   parser.add_argument('--proj', type=str, default=os.path.basename(os.getcwd()),
+                       help='The name of the QtCreator project, (Default=CWD directory name)')
+   parser.add_argument('--path', type=str, default=os.getcwd(),
+                       help='Path to the QtCreator project files. (Default=CWD)')
+   parser.add_argument('--watchdir', type=str, default=os.getcwd(),
+                       help='Base path to watch. Recursively watches all sub directories. (Default=CWD)')
+   parser.add_argument('--includes', type=str, nargs='+', default=[],
+                       help='Include directory base paths. Recursively adds all sub directories. Path specified by --path automatically included.')
+   parser.add_argument('--patterns', type=str, nargs='+', default=[],
+                       help='File patterns to watch. (Ex: *.h *.py wscript) Note: No regex support, only *. and full names supported.')
+   parser.add_argument('--excludes', type=str, nargs='+', default=[],
+                       help='Directories to exclude from watching. (Ex .build test) Note: No regex support')
+   args = parser.parse_args()
+
+   _print_settings(args)
+
+   validator = PathValidator(args.patterns, args.excludes)
+   updater = QtcUpdater(args.proj, args.path, validator, args.includes, args.init)
+   watchdog = QtcWatchdog(args.watchdir, updater)
+   watchdog.start()
+
+def _print_settings(args):
+   print 'Settings:'
+   for arg,value in vars(args).iteritems():
+      print '   {0}: {1}'.format(unicode(arg), unicode(value))
+   print
+
+def check_path_exists(path):
+   if not os.path.exists(path):
+      print 'Error: {0} does not exist'.format(unicode(path))
+      sys.exit(1)
+
+class PathValidator():
+   def __init__(self, file_patterns, exclude_dirs):
+      self._file_patterns = file_patterns
+      self._exclude_dirs = exclude_dirs
+
+   def valid(self, path):
+      return True
+
+class QtcUpdater():
+   def __init__(self, proj, path, validator, includes, init):
+      self._files_path = os.path.join(path, '{0}.files'.format(unicode(proj)))
+      check_path_exists(self._files_path)
+      self._includes_path = os.path.join(path, '{0}.includes'.format(unicode(proj)))
+      check_path_exists(self._includes_path)
+      self._validator = validator
+      self._includes = includes
+      self._initialize(init)
+
+   def _initialize(self, init):
+      if init:
+         print 'Todo: implement QtcUpdater::_initialize'
+
+   def add_file(self, path):
+      print 'Adding file: {0}'.format(path)
+
+   def add_include(self, path):
+      print 'Adding include: {0}'.format(path)
+
+   def remove_file(self, path):
+      print 'Removing file: {0}'.format(path)
+
+   def remove_include(self, path):
+      print 'Removing include: {0}'.format(path)
+
+   def move_file(self, src, dest):
+      print 'Moving file: {0} {1}'.format(src, dest)
+
+
+class QtcWatchdog():
+   def __init__(self, path, updater):
+      self._path = path
+      event_handler = QtcWatchdog.EventHandler(updater)
+      self._observer = Observer()
+      self._observer.schedule(event_handler, path, recursive=True)
+
+   def start(self):
+      self._observer.start()
+      try:
+         while True:
+            time.sleep(1)
+      except KeyboardInterrupt:
+         self._observer.stop()
+      self._observer.join()
+
+   class EventHandler(FileSystemEventHandler):
+      def __init__(self, updater):
+         self._updater = updater
+
+      def on_created(self, event):
+         if event.is_directory:
+            self._updater.add_include(event.src_path)
+         else:
+            self._updater.add_file(event.src_path)
+
+      def on_deleted(self, event):
+         print 'Deleted'
+
+      def on_moved(self, event):
+         print 'Moved'
+
+if __name__ == '__main__':
+   main()
