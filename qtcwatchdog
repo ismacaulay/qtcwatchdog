@@ -4,28 +4,50 @@ from argparse import ArgumentParser
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
+import utilities
+
+logger = None
+
 def main():
+   global logger
    parser = ArgumentParser(description='A file system watcher for QtCreator')
-   parser.add_argument('--init', action='store_true', default=False,
-                       help='Initialize QtCreator files.')
    parser.add_argument('--proj', type=str, default=os.path.basename(os.getcwd()),
                        help='The name of the QtCreator project, (Default=CWD directory name)')
    parser.add_argument('--path', type=str, default=os.getcwd(),
                        help='Path to the QtCreator project files. (Default=CWD)')
    parser.add_argument('--watchdir', type=str, default=os.getcwd(),
                        help='Base path to watch. Recursively watches all sub directories. (Default=CWD)')
-   parser.add_argument('--includes', type=str, nargs='+', default=[],
-                       help='Include directory base paths. Recursively adds all sub directories. Path specified by --path automatically included.')
-   parser.add_argument('--patterns', type=str, nargs='+', default=[],
-                       help='File patterns to watch. (Ex: *.h *.py wscript) Note: No regex support, only *. and full names supported.')
-   parser.add_argument('--excludes', type=str, nargs='+', default=[],
-                       help='Directories to exclude from watching. (Ex .build test) Note: No regex support')
+   parser.add_argument('--includes', default='',
+                       help='Include directory base paths seperated by a semicolon. Recursively adds all sub directories. Path specified by --path automatically included. (Ex. C:\hello;C:\world)')
+   parser.add_argument('--patterns', type=str, default='',
+                       help='File patterns to watch seperated by a semicolon. (Ex: *.h;*.py;wscript) Note: No regex support, only *. and full names supported.')
+   parser.add_argument('--excludes', type=str, default='',
+                       help='Directories to exclude from watching seperated by a semicolon. (Ex hello;world;test) Note: No regex support')
+   parser.add_argument('-v', '--verbose', action='store_true', default=False,
+                       help='Print messages about what is happening.')
    args = parser.parse_args()
-
+   logger = SimpleLogger(args.verbose)
    _print_settings(args)
 
-   validator = PathValidator(args.patterns, args.excludes)
-   updater = QtcUpdater(args.proj, args.path, validator, args.includes, args.init)
+
+   includes = utilities.split_semicolon(args.includes)
+   patterns = utilities.split_semicolon(args.patterns)
+   excludes = utilities.split_semicolon(args.excludes)
+
+   utilities.check_path_exists(args.watchdir)
+
+   (files, dirs) = _all_files_and_dirs(args.watchdir, includes)
+
+   validator = PathValidator(patterns, excludes)
+   qtcfiles_path = os.path.join(args.path, '{0}.files'.format(unicode(args.proj)))
+   utilities.check_path_exists(qtcfiles_path)
+   qtc_files = QtcFile(qtcfiles_path, validator, files)
+
+   qtcincludes_path = os.path.join(args.path, '{0}.includes'.format(unicode(args.proj)))
+   utilities.check_path_exists(qtcincludes_path)
+   qtc_includes = QtcFile(qtcincludes_path, validator, dirs)
+
+   updater = QtcUpdater(qtc_files, qtc_includes)
    watchdog = QtcWatchdog(args.watchdir, updater)
    watchdog.start()
 
@@ -33,50 +55,83 @@ def _print_settings(args):
    print 'Settings:'
    for arg,value in vars(args).iteritems():
       print '   {0}: {1}'.format(unicode(arg), unicode(value))
-   print
+   print '   Logging: ' + str(logger.is_logging) + '\n'
 
-def check_path_exists(path):
-   if not os.path.exists(path):
-      print 'Error: {0} does not exist'.format(unicode(path))
-      sys.exit(1)
+def _all_files_and_dirs(watchdir, includes):
+   (files, dirs) = utilities.all_files_and_dirs(watchdir)
+   for inc in includes:
+      (f, d) = utilities.all_files_and_dirs(inc)
+      files.extend(f)
+      dirs.extend(d)
+   return (files, dirs)
 
 class PathValidator():
    def __init__(self, file_patterns, exclude_dirs):
       self._file_patterns = file_patterns
       self._exclude_dirs = exclude_dirs
 
-   def valid(self, path):
-      return True
+   def validate_list(self, data):
+      return data
+
+   def validate_path(self, path):
+      return path
+
+class QtcFile():
+   def __init__(self, path, validator, initial_data):
+      utilities.check_path_exists(path)
+      self._path = path
+      self._validator = validator
+      self._data = self._validator.validate_list(initial_data)
+      utilities.write_list(self._path, self._data)
+
+   def write(self, path):
+      path = self._validator.validate_path(path)
+      if not path in self._data:
+         self._data.append(path)
+         utilities.append_line(self._path, path)
+
+   def remove(self, path):
+      path = self._validator.validate_path(path)
+      if path in self._data:
+         self._data.remove(path)
+         utilities.remove_line(self._path, path)
+
+   def move(self, src, dest):
+      src = self._validator.validate_path(src)
+      dest = self._validator.validate_path(dest)
+      if src in self._data:
+         self._data.remove(src)
+         if not dest in self._data:
+            self._data.append(dest)
+            utilities.remove_and_append(self._path, src, dest)
+         else:
+            utilities.remove_line(self._path, src)
+      elif not dest in self._data:
+         self._data.append(dest)
+         utilities.append_line(self._path, dest)
 
 class QtcUpdater():
-   def __init__(self, proj, path, validator, includes, init):
-      self._files_path = os.path.join(path, '{0}.files'.format(unicode(proj)))
-      check_path_exists(self._files_path)
-      self._includes_path = os.path.join(path, '{0}.includes'.format(unicode(proj)))
-      check_path_exists(self._includes_path)
-      self._validator = validator
-      self._includes = includes
-      self._initialize(init)
-
-   def _initialize(self, init):
-      if init:
-         print 'Todo: implement QtcUpdater::_initialize'
+   def __init__(self, qtc_files, qtc_includes):
+      self._qtc_files = qtc_files
+      self._qtc_includes = qtc_includes
 
    def add_file(self, path):
-      print 'Adding file: {0}'.format(path)
+      self._qtc_files.write(path)
 
    def add_include(self, path):
-      print 'Adding include: {0}'.format(path)
+      self._qtc_includes.write(path)
 
    def remove_file(self, path):
-      print 'Removing file: {0}'.format(path)
+      self._qtc_files.remove(path)
 
    def remove_include(self, path):
-      print 'Removing include: {0}'.format(path)
+      self._qtc_includes.remove(path)
 
    def move_file(self, src, dest):
-      print 'Moving file: {0} {1}'.format(src, dest)
+      self._qtc_files.move(src, dest)
 
+   def move_include(self, src, dest):
+      self._qtc_includes.move(src, dest)
 
 class QtcWatchdog():
    def __init__(self, path, updater):
@@ -99,16 +154,33 @@ class QtcWatchdog():
          self._updater = updater
 
       def on_created(self, event):
+         logger.log('QtcWatchdog::Created: ' + event.src_path)
          if event.is_directory:
             self._updater.add_include(event.src_path)
          else:
             self._updater.add_file(event.src_path)
 
       def on_deleted(self, event):
-         print 'Deleted'
+         logger.log('QtcWatchdog::Deleted: ' + event.src_path)
+         if event.is_directory:
+            self._updater.remove_include(event.src_path)
+         else:
+            self._updater.remove_file(event.src_path)
 
       def on_moved(self, event):
-         print 'Moved'
+         logger.log('QtcWatchdog::Moved: src:' + event.src_path + ' dest: ' + event.dest_path)
+         if event.is_directory:
+            self._updater.move_include(event.src_path, event.dest_path)
+         else:
+            self._updater.move_file(event.src_path, event.dest_path)
+
+class SimpleLogger():
+   def __init__(self, log=False):
+      self.is_logging = log
+
+   def log(self, text):
+      if self.is_logging:
+         print str(text)
 
 if __name__ == '__main__':
    main()
