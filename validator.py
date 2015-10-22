@@ -16,7 +16,6 @@ class PathValidator():
       return ret
 
    def validate_path(self, path):
-      logging.debug('PathValidator::validate_path path=' + str(path))
       _, ext = os.path.splitext(path)
       if self._all_included():
          return self._check_excludes(path)
@@ -24,22 +23,18 @@ class PathValidator():
          return self._check_excludes(path)
       if os.path.basename(path) in self._filenames:
          return self._check_excludes(path)
-      logging.debug('PathValidator::validate_path returning None')
       return None
 
    def _check_excludes(self, path):
       if len(self._exclude_dirs) == 0:
-         logging.debug('PathValidator::_check_excludes returning path')
          return path
 
       remaining = path
       while True:
          (remaining, x) = os.path.split(remaining)
          if not x or x == '':
-            logging.debug('PathValidator::_check_excludes returning path')
             return path
          if x in self._exclude_dirs:
-            logging.debug('PathValidator::_check_excludes returning None')
             return None
 
    def _all_included(self):

@@ -8,18 +8,15 @@ class QtcFileWriter():
       self._filepath = filepath
 
    def write(self, list_to_write):
-      logging.debug('QtcFileWriter::write: ' + str(list_to_write))
       with open(self._filepath, 'w') as f:
          for i in list_to_write:
             f.write(self._convert_to_path(i) + '\n')
 
    def append(self, line):
-      logging.debug('QtcFileWriter::append: ' + str(line))
       with open(self._filepath, 'a') as f:
          f.write(line + '\n')
 
    def remove(self, line_to_remove):
-      logging.debug('QtcFileWriter::remove: ' + str(line_to_remove))
       position = 0
       found = False
       with open(self._filepath, 'r+') as f:
@@ -37,7 +34,6 @@ class QtcFileWriter():
             f.truncate()
 
    def remove_and_append(self, line_to_remove, line_to_append):
-      logging.debug('QtcFileWriter::remove_and_append: ' + str(line_to_remove) + ' ' + str(line_to_append))
       position = 0
       found = False
       with open(self._filepath, 'r+') as f:
