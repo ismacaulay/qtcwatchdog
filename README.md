@@ -6,6 +6,7 @@ python qtcwatchdog --proj=helloWorld \
                    --watch=C:\proj\helloworld\src \
                    --patterns=*.py;*.cpp;*.h
                    --excludes='tmp'
+                   -v
 ```
 
 ## Dependencies
