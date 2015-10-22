@@ -1,9 +1,9 @@
 
-import os
+import os, sys
 
 def check_path_exists(path):
    if not os.path.exists(path):
-      print 'Error: {0} does not exist'.format(unicode(path))
+      print('Error: {0} does not exist'.format(str(path)))
       sys.exit(1)
 
 def all_files_and_dirs(path):
@@ -16,4 +16,6 @@ def all_files_and_dirs(path):
    return (files, dirs)
 
 def split_semicolon(s):
+   if len(s) == 0:
+      return []
    return s.strip().split(';')

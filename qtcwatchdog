@@ -1,21 +1,22 @@
 #!/usr/bin/env python
-import os, sys, time
+import os, sys, time, logging
 from argparse import ArgumentParser
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 import utilities
-
-logger = None
+from validator import PathValidator
+from writer import QtcFileWriter
+from file import QtcFile
+from updater import QtcUpdater
 
 def main():
-   global logger
    parser = ArgumentParser(description='A file system watcher for QtCreator')
-   parser.add_argument('--proj', type=str, default=os.path.basename(os.getcwd()),
+   parser.add_argument('--proj', type=str, default=None,
                        help='The name of the QtCreator project, (Default=CWD directory name)')
-   parser.add_argument('--path', type=str, default=os.getcwd(),
-                       help='Path to the QtCreator project files. (Default=CWD)')
-   parser.add_argument('--watchdir', type=str, default=os.getcwd(),
+   parser.add_argument('--path', type=str, default=None,
+                       help='Path to the QtCreator project files.')
+   parser.add_argument('--watch', type=str, default=None,
                        help='Base path to watch. Recursively watches all sub directories. (Default=CWD)')
    parser.add_argument('--includes', default='',
                        help='Include directory base paths seperated by a semicolon. Recursively adds all sub directories. Path specified by --path automatically included. (Ex. C:\hello;C:\world)')
@@ -26,241 +27,104 @@ def main():
    parser.add_argument('-v', '--verbose', action='store_true', default=False,
                        help='Print messages about what is happening.')
    args = parser.parse_args()
-   logger = SimpleLogger(args.verbose)
-   _print_settings(args)
+   if args.verbose:
+      logging.basicConfig(format='[%(levelname)s] %(message)s', level=logging.DEBUG)
+   else:
+      logging.basicConfig(format='[%(levelname)s] %(message)s', level=logging.CRITICAL)
 
+   if not args.path and args.watch:
+      args.path = args.watch
+   elif args.path and not args.watch:
+      args.watch = args.path
+   elif not args.path and not args.watch:
+      args.path = os.getcwd()
+      args.watch = os.getcwd()
+
+   if not args.proj:
+      args.proj = os.path.basename(args.path)
+
+   _print_settings(args)
 
    includes = utilities.split_semicolon(args.includes)
    patterns = utilities.split_semicolon(args.patterns)
    excludes = utilities.split_semicolon(args.excludes)
 
-   utilities.check_path_exists(args.watchdir)
+   utilities.check_path_exists(args.watch)
 
-   (files, dirs) = _all_files_and_dirs(args.watchdir, includes)
+   (files, dirs) = _all_files_and_dirs(args.watch, includes)
 
    validator = PathValidator(patterns, excludes)
 
-   qtcfiles_path = os.path.join(args.path, '{0}.files'.format(unicode(args.proj)))
+   qtcfiles_path = os.path.join(args.path, '{0}.files'.format(str(args.proj)))
    utilities.check_path_exists(qtcfiles_path)
-   qtcfiles_writer = QtcFileWriter(qtcfiles_path, args.path, [args.watchdir])
+   qtcfiles_writer = QtcFileWriter(qtcfiles_path, args.path, [args.watch])
    qtc_files = QtcFile(qtcfiles_path, validator, qtcfiles_writer, files)
 
-   qtcincludes_path = os.path.join(args.path, '{0}.includes'.format(unicode(args.proj)))
+   qtcincludes_path = os.path.join(args.path, '{0}.includes'.format(str(args.proj)))
    utilities.check_path_exists(qtcincludes_path)
-   basepaths = [args.watchdir]
+   basepaths = [args.watch]
    basepaths.extend(includes)
    qtcincludes_writer = QtcFileWriter(qtcincludes_path, args.path, basepaths)
    qtc_includes = QtcFile(qtcincludes_path, validator, qtcincludes_writer, dirs)
 
    updater = QtcUpdater(qtc_files, qtc_includes)
-   watchdog = QtcWatchdog(args.watchdir, updater)
+   watchdog = QtcWatchdog(args.watch, updater)
    watchdog.start()
 
 def _print_settings(args):
-   print 'Settings:'
-   for arg,value in vars(args).iteritems():
-      print '   {0}: {1}'.format(unicode(arg), unicode(value))
-   print '   Logging: ' + str(logger.is_logging) + '\n'
+   print('Settings:')
+   for arg,value in vars(args).items():
+      print('   {0}: {1}'.format(str(arg), str(value)))
+   print('   Logging: ' + str(args.verbose) + '\n')
 
-def _all_files_and_dirs(watchdir, includes):
-   (files, dirs) = utilities.all_files_and_dirs(watchdir)
+def _all_files_and_dirs(watch, includes):
+   (files, dirs) = utilities.all_files_and_dirs(watch)
    for inc in includes:
       (f, d) = utilities.all_files_and_dirs(inc)
       files.extend(f)
       dirs.extend(d)
    return (files, dirs)
 
-class PathValidator():
-   def __init__(self, file_patterns, exclude_dirs):
-      self._extensions = self._extensions_from_pattterns(file_patterns)
-      self._filenames = self._filenames_from_patterns(file_patterns)
-      self._exclude_dirs = exclude_dirs
-
-   def validate_list(self, data):
-      ret = []
-      for path in data:
-         path = self.validate_path(path)
-         if path:
-            ret.append(path)
-      return ret
-
-   def validate_path(self, path):
-      _, ext = os.path.splitext(path)
-      if ext in self._extensions:
-         return self._check_excludes(path)
-      if os.path.basename(path) in self._filenames:
-         return self._check_excludes(path)
-      return None
-
-   def _check_excludes(self, path):
-      return path
-
-   def _extensions_from_pattterns(self, patterns):
-      exts = []
-      for p in patterns:
-         if p.startswith('*.'):
-            _, ext = os.path.splitext(p)
-            exts.append(ext)
-      return exts
-
-   def _filenames_from_patterns(self, patterns):
-      fnames = []
-      for p in patterns:
-         if not p.startswith('*.'):
-            fnames.append(p)
-      return fnames
-
-class QtcFileWriter():
-   def __init__(self, filepath, projpath, basepaths=[]):
-      self._projpath = projpath
-      self._basepaths = basepaths
-      self._filepath = filepath
-
-   def write(self, list_to_write):
-      with open(self._filepath, 'w') as f:
-         for i in list_to_write:
-            f.write(self._convert_to_path(i) + '\n')
-
-   def append(self, line):
-      with open(self._filepath, 'a') as f:
-         f.write(line + '\n')
-
-   def remove(self, line_to_remove):
-      with open(self._filepath, 'r+') as f:
-         data = f.readlines()
-         f.seek(0)
-         for line in data:
-            line = self._convert_to_path(line)
-            if line != line_to_remove:
-               f.write(line + '\n')
-         f.truncate()
-
-   def remove_and_append(self, line_to_remove, line_to_append):
-      with open(self._filepath, 'r+') as f:
-         data = f.readlines()
-         f.seek(0)
-         for line in data:
-            line = self._convert_to_path(line)
-            if line != line_to_remove:
-               f.write(line + '\n')
-         f.write(line_to_append + '\n')
-         f.truncate()
-
-   def _convert_to_path(self, line):
-      line = line.strip()
-      line = os.path.abspath(line)
-      for basepath in self._basepaths:
-         if line.startswith(basepath):
-            return line
-      return os.path.join(self._projpath, line)
-
-class QtcFile():
-   def __init__(self, path, validator, writer, initial_data):
-      utilities.check_path_exists(path)
-      self._path = path
-      self._validator = validator
-      self._writer = writer
-      self._data = self._validator.validate_list(initial_data)
-      self._writer.write(self._data)
-
-   def write(self, path):
-      path = self._validator.validate_path(path)
-      if path and not path in self._data:
-         self._data.append(path)
-         self._writer.append(path)
-
-   def remove(self, path):
-      path = self._validator.validate_path(path)
-      if path and path in self._data:
-         self._data.remove(path)
-         self._writer.remove(path)
-
-   def move(self, src, dest):
-      src = self._validator.validate_path(src)
-      dest = self._validator.validate_path(dest)
-      if src and src in self._data:
-         self._data.remove(src)
-         if dest and not dest in self._data:
-            self._data.append(dest)
-            self._writer.remove_and_append(src, dest)
-         else:
-            self._writer.remove(src)
-      elif dest and not dest in self._data:
-         self._data.append(dest)
-         self._writer.append(dest)
-
-class QtcUpdater():
-   def __init__(self, qtc_files, qtc_includes):
-      self._qtc_files = qtc_files
-      self._qtc_includes = qtc_includes
-
-   def add_file(self, path):
-      self._qtc_files.write(path)
-
-   def add_include(self, path):
-      self._qtc_includes.write(path)
-
-   def remove_file(self, path):
-      self._qtc_files.remove(path)
-
-   def remove_include(self, path):
-      self._qtc_includes.remove(path)
-
-   def move_file(self, src, dest):
-      self._qtc_files.move(src, dest)
-
-   def move_include(self, src, dest):
-      self._qtc_includes.move(src, dest)
-
 class QtcWatchdog():
    def __init__(self, path, updater):
       self._path = path
-      event_handler = QtcWatchdog.EventHandler(updater)
+      self._event_handler = QtcWatchdog.EventHandler(updater)
       self._observer = Observer()
-      self._observer.schedule(event_handler, path, recursive=True)
+      self._observer.schedule(self._event_handler, self._path, recursive=True)
 
    def start(self):
       self._observer.start()
       try:
          while True:
-            time.sleep(1)
+            if self._observer.isAlive():
+               time.sleep(1)
+            else:
+               self._restart()
       except KeyboardInterrupt:
-         logger.log('Shutting down.')
          self._observer.stop()
       self._observer.join()
+
+   def _restart(self):
+      self._observer.stop()
+      self._observer = Observer()
+      self._observer.schedule(self._event_handler, self._path, recursive=True)
+      self._observer.start()
 
    class EventHandler(FileSystemEventHandler):
       def __init__(self, updater):
          self._updater = updater
 
       def on_created(self, event):
-         logger.log('QtcWatchdog::Created: ' + event.src_path)
-         if event.is_directory:
-            self._updater.add_include(event.src_path)
-         else:
-            self._updater.add_file(event.src_path)
+         logging.debug('EventHandler::on_created ' + str(event.src_path))
+         self._updater.add(event.src_path, event.is_directory)
 
       def on_deleted(self, event):
-         logger.log('QtcWatchdog::Deleted: ' + event.src_path)
-         if event.is_directory:
-            self._updater.remove_include(event.src_path)
-         else:
-            self._updater.remove_file(event.src_path)
+         logging.debug('EventHandler::on_deleted ' + str(event.src_path))
+         self._updater.remove(event.src_path, event.is_directory)
 
       def on_moved(self, event):
-         logger.log('QtcWatchdog::Moved: src:' + event.src_path + ' dest: ' + event.dest_path)
-         if event.is_directory:
-            self._updater.move_include(event.src_path, event.dest_path)
-         else:
-            self._updater.move_file(event.src_path, event.dest_path)
-
-class SimpleLogger():
-   def __init__(self, log=False):
-      self.is_logging = log
-
-   def log(self, text):
-      if self.is_logging:
-         print str(text)
+         logging.debug('EventHandler::on_moved src=' + str(event.src_path) + ' dest=' + str(event.dest_path))
+         self._updater.move(event.src_path, event.dest_path, event.is_directory)
 
 if __name__ == '__main__':
    main()
