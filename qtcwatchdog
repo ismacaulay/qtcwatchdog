@@ -53,7 +53,7 @@ def main():
 
    (files, dirs) = _all_files_and_dirs(args.watch, includes)
 
-   validator = PathValidator(patterns, excludes)
+   validator = PathValidator(patterns, excludes, dirs)
 
    qtcfiles_path = os.path.join(args.path, '{0}.files'.format(str(args.proj)))
    utilities.check_path_exists(qtcfiles_path)

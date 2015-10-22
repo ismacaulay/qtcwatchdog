@@ -2,10 +2,11 @@
 import os, logging
 
 class PathValidator():
-   def __init__(self, file_patterns, exclude_dirs):
+   def __init__(self, file_patterns, exclude_dirs, includes):
       self._extensions = self._extensions_from_pattterns(file_patterns)
       self._filenames = self._filenames_from_patterns(file_patterns)
       self._exclude_dirs = exclude_dirs
+      self._includes = includes
 
    def validate_list(self, data):
       ret = []
@@ -16,6 +17,17 @@ class PathValidator():
       return ret
 
    def validate_path(self, path):
+      if os.path.isdir(path):
+         return self._validate_include(path)
+      else:
+         return self._validate_file(path)
+
+   def _validate_include(self, path):
+      if self._is_include(path):
+         return self._check_excludes(path)
+      return None
+
+   def _validate_file(self, path):
       _, ext = os.path.splitext(path)
       if self._all_included():
          return self._check_excludes(path)
@@ -39,6 +51,13 @@ class PathValidator():
 
    def _all_included(self):
       return len(self._extensions) == 0 and len(self._filenames) == 0
+   
+   def _is_include(self, path):
+      p = os.path.abspath(path)
+      for inc in self._includes:
+         if p.startswith(os.path.abspath(inc)):
+            return True
+      return False
 
    def _extensions_from_pattterns(self, patterns):
       exts = []
