@@ -7,12 +7,12 @@ def check_path_exists(path):
       sys.exit(1)
 
 def all_files_and_dirs(path):
-   files = []
-   dirs = []
+   files = set()
+   dirs = set()
    for root, dirnames, filenames in os.walk(path):
-      dirs.append(root)
+      dirs.add(root)
       for fname in filenames:
-         files.append(os.path.join(root, fname))
+         files.add(os.path.join(root, fname))
    return (files, dirs)
 
 def split_semicolon(s):
