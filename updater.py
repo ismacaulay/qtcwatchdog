@@ -60,9 +60,12 @@ class FileWriter(object):
       self._paths_to_remove = set()
       self._process_timer = threading.Timer(3.0, self._process_paths)
       self._lock = threading.Lock()
+      with open(self._file_path, 'r+') as f:
+         f.truncate()
 
    def write(self, path):
       self._process_timer.cancel()
+      self._process_timer = threading.Timer(3.0, self._process_paths)
       
       self._lock.acquire()
       if path in self._paths_to_remove:
@@ -74,6 +77,7 @@ class FileWriter(object):
 
    def remove(self, path):
       self._process_timer.cancel()
+      self._process_timer = threading.Timer(3.0, self._process_paths)
 
       self._lock.acquire()
       if path in self._paths_to_write:

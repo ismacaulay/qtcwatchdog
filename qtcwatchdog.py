@@ -9,7 +9,7 @@ from updater import QtcUpdater
 from validator import RegexValidator
 
 class QtcWatchdog(object):
-   def __init__(self, **kwargs):
+   def __init__(self, *args, **kwargs):
       self._configured = False
 
       if not 'watchdir' in kwargs:
@@ -18,7 +18,7 @@ class QtcWatchdog(object):
 
       self._watchdir = kwargs.get('watchdir')
       
-      proj = kwargs.get('proj', os.path.basename(projpath))
+      proj = kwargs.get('proj', os.path.basename(self._watchdir))
 
       files_regex = kwargs.get('files_regex', '')
       files_excludes_regex = kwargs.get('files_excludes_regex', '')
@@ -28,19 +28,25 @@ class QtcWatchdog(object):
       includes_excludes_regex = kwargs.get('includes_excludes_regex', '')
       includes_validator = RegexValidator(includes_regex, includes_excludes_regex)
 
-      self._updater = QtcUpdater(proj, self._watchdir, files_validator, includes_validator)
-
+      print 'Initializing files...',
+      sys.stdout.flush()
+      updater = QtcUpdater(proj, self._watchdir, files_validator, includes_validator)
       (files, dirs) = utilities.all_files_and_dirs(self._watchdir)
-      
       for f in files:
-         self._updater.add(f, False)
+         updater.add(f, False)
       for d in dirs:
-         self._updater.add(d, True)
-
+         updater.add(d, True)
+      print 'done'
+      sys.stdout.flush()
+      
+      print 'Initializing event handler...',
+      sys.stdout.flush()
       self._event_handler = QtcWatchdog.EventHandler(updater)
       self._observer = Observer()
       self._observer.schedule(self._event_handler, self._watchdir, recursive=True)
       self._configured = True
+      print 'done'
+      sys.stdout.flush()
 
    def start(self):
       if not self._configured:
