@@ -49,9 +49,19 @@ class QtcWatchdog(object):
       print_message('done')
 
    def start(self):
-      print_message('Starting watchdog...', False)
-      self._observer.start()
-      print_message('done')
+      try:
+         print_message('Starting watchdog...', False)
+         self._observer.start()
+         print_message('running')
+      except OSError as e:
+         if 'inotify watch limit reached' in e:
+            msg =  'inotify watch limit reached.\n\n' 
+            msg += 'To fix add the \'fs.inotify.max_user_watches = 524288\' to /etc/sysctl.conf\n'
+            msg += 'Then run \'sudo sysctl -p\'\n'
+            raise Exception(msg)
+         else:
+            raise e 
+
       while True:
          if self._observer.isAlive():
             time.sleep(1)
