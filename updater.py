@@ -9,7 +9,7 @@ class QtcUpdater(object):
       self._projpath = projpath
 
    def add(self, path, is_dir, relpath=True):
-      path = self._convert_to_path(path)
+      path = self._convert_to_path(path, relpath)
       if is_dir:
          self._qtc_includes.write(path)
       else:
@@ -23,7 +23,8 @@ class QtcUpdater(object):
          self._qtc_files.remove(path)
 
    def move(self, src, dest, is_dir):
-      path = self._convert_to_path(path)
+      src = self._convert_to_path(src)
+      dest = self._convert_to_path(dest)
       if is_dir:
          self._qtc_includes.move(src, dest)
       else:
@@ -31,7 +32,7 @@ class QtcUpdater(object):
 
    def _convert_to_path(self, path, relpath=True):
       if relpath:
-         return os.path.relpath(path, os.path.dirname(self._projpath))
+         return os.path.relpath(path, self._projpath)
       else:
          return os.path.abspath(path)
 
@@ -61,20 +62,20 @@ class FileWriter(object):
       self._file_path = path
       self._paths_to_write = set()
       self._paths_to_remove = set()
-      self._process_timer = threading.Timer(3.0, self._process_paths)
+      self._process_timer = threading.Timer(1.0, self._process_paths)
       self._lock = threading.Lock()
       with open(self._file_path, 'r+') as f:
          f.truncate()
 
-   def _timer_reset():
+   def _timer_reset(self):
       self._process_timer.cancel()
       self._process_timer = threading.Timer(1.0, self._process_paths)
 
-   def _reset_and_lock():
+   def _reset_and_lock(self):
       self._timer_reset()
       self._lock.acquire()
 
-   def _unlock_and_start():
+   def _unlock_and_start(self):
       self._lock.release()
       self._process_timer.start()
 
@@ -102,30 +103,33 @@ class FileWriter(object):
       self._lock.release()
 
       with open(self._file_path, 'r+') as f:
-         position = 0
          found_first = False
          data = f.readlines()
+         offset = 0
 
          if len(remove_paths) > 0:
             for line in data:
-               line = line.strip() # strip the newline character off the end
-
+               stripped_line = line.strip('\n') # strip the newline character off the end
+               
                # if we should remove the line:
                #     if we have not removed any line yet, seek to the position in the file
                #     if we have removed a line, just remove the line from the paths to remove
                # else if we have seeked to the first line to remove:
                #     write the line to the file
-               if line in remove_paths:
+               if stripped_line in remove_paths:
                   if not found_first:
                      found_first = True
-                     f.seek(position)
-                  remove_paths.remove(line)
+                     f.seek(offset)
+                  remove_paths.remove(stripped_line)
                elif found_first:
-                  f.write(line + '\n')
-               position = position + 1
+                  f.write(line)
+                  offset += len(line)
+               else:
+                  offset += len(line)
+
+            f.seek(offset)
+            f.truncate()
 
          # if there are any paths that need writing, write them
          for path in write_paths:
             f.write(path + '\n')
-         # truncate the end of the file incase there is less than before
-         f.truncate()

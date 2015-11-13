@@ -29,8 +29,7 @@ class QtcWatchdog(object):
       include_paths = kwargs.get('includes', {}).get('paths', [])
       includes_validator = RegexValidator(includes_regex, includes_excludes_regex)
 
-      print 'Initializing files...',
-      sys.stdout.flush()
+      print_message('Initializing files...', False)
       updater = QtcUpdater(proj, self._project_path, files_validator, includes_validator)
       (files, dirs) = utilities.all_files_and_dirs(self._project_path)
       for f in files:
@@ -41,19 +40,18 @@ class QtcWatchdog(object):
          (_, dirs) = utilities.all_files_and_dirs(p)
          for d in dirs:
             updater.add(d, True, relpath=False)
-      print 'done'
-      sys.stdout.flush()
+      print_message('done')
 
-      print 'Initializing event handler...',
-      sys.stdout.flush()
+      print_message('Initializing event handler...', False)
       self._event_handler = QtcWatchdog.EventHandler(updater)
       self._observer = Observer()
       self._observer.schedule(self._event_handler, self._project_path, recursive=True)
-      print 'done'
-      sys.stdout.flush()
+      print_message('done')
 
    def start(self):
+      print_message('Starting watchdog...', False)
       self._observer.start()
+      print_message('done')
       while True:
          if self._observer.isAlive():
             time.sleep(1)
@@ -61,8 +59,10 @@ class QtcWatchdog(object):
             self._restart()
 
    def stop(self):
+      print_message('Stopping watchdog...', False)
       self._observer.stop()
       self._observer.join()
+      print_message('done')
 
    def _restart(self):
       self._observer.stop()
@@ -82,3 +82,10 @@ class QtcWatchdog(object):
 
       def on_moved(self, event):
          self._updater.move(event.src_path, event.dest_path, event.is_directory)
+
+def print_message(message, newline=True):
+   if newline:
+      print message
+   else:
+      print message,
+   sys.stdout.flush()
