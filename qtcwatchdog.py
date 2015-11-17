@@ -2,7 +2,7 @@
 import os, sys, time, logging
 from argparse import ArgumentParser
 from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
+from watchdog.events import FileSystemEventHandler, RegexMatchingEventHandler
 
 import utilities
 from updater import QtcUpdater
@@ -43,7 +43,7 @@ class QtcWatchdog(object):
       print_message('done')
 
       print_message('Initializing event handler...', False)
-      self._event_handler = QtcWatchdog.EventHandler(updater)
+      self._event_handler = QtcWatchdog.EventHandler(updater, files_regex, files_excludes_regex)
       self._observer = Observer()
       self._observer.schedule(self._event_handler, self._project_path, recursive=True)
       print_message('done')
@@ -62,11 +62,17 @@ class QtcWatchdog(object):
          else:
             raise e 
 
-      while True:
-         if self._observer.isAlive():
-            time.sleep(1)
-         else:
-            self._restart()
+      try:
+         while True:
+            if self._observer.isAlive():
+               time.sleep(1)
+            else:
+               self._restart()
+      except KeyboardInterrupt as e:
+         raise e
+      except:
+         print 'Exception thrown. Restarting watchdog'
+         self._restart()
 
    def stop(self):
       print_message('Stopping watchdog...', False)
@@ -80,9 +86,10 @@ class QtcWatchdog(object):
       self._observer.schedule(self._event_handler, self._project_path, recursive=True)
       self._observer.start()
 
-   class EventHandler(FileSystemEventHandler):
-      def __init__(self, updater):
+   class EventHandler(RegexMatchingEventHandler):
+      def __init__(self, updater, regex, ignores):
          self._updater = updater
+         super(QtcWatchdog.EventHandler, self).__init__(regexes=[regex], ignore_regexes=[ignores])
 
       def on_created(self, event):
          self._updater.add(event.src_path, event.is_directory)

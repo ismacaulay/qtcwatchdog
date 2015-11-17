@@ -11,23 +11,29 @@ class QtcUpdater(object):
    def add(self, path, is_dir, relpath=True):
       path = self._convert_to_path(path, relpath)
       if is_dir:
+         print '[add include] ' + path
          self._qtc_includes.write(path)
       else:
+         print '[add file] ' + path
          self._qtc_files.write(path)
 
    def remove(self, path, is_dir):
       path = self._convert_to_path(path)
       if is_dir:
+         print '[remove include] ' + path
          self._qtc_includes.remove(path)
       else:
+         print '[remove file] ' + path
          self._qtc_files.remove(path)
 
    def move(self, src, dest, is_dir):
       src = self._convert_to_path(src)
       dest = self._convert_to_path(dest)
       if is_dir:
+         print '[move include]\n   src: ' + src + '\n   dest:' + dest
          self._qtc_includes.move(src, dest)
       else:
+         print '[move file]\n   src: ' + src + '\n   dest:' + dest
          self._qtc_files.move(src, dest)
 
    def _convert_to_path(self, path, relpath=True):
