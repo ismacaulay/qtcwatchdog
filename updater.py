@@ -47,45 +47,49 @@ class FileWriter(object):
         self._path = path
         with open(self._path, 'r+') as f:
             f.truncate()
-        # self._paths_to_write = set()
-        # self._paths_to_remove = set()
+
+        self._write_cache = set()
+        self._remove_cache = set()
+
         self._lock = threading.Lock()
         self._process_timer = threading.Timer(interval=1.0, function=self._process_paths)
+        self._process_timer.start()
 
-    # def _timer_reset(self):
-    #     self._process_timer.cancel()
-    #     self._process_timer = threading.Timer(1.0, self._process_paths)
-    #
-    # def _reset_and_lock(self):
-    #     self._timer_reset()
-    #     self._lock.acquire()
-    #
-    # def _unlock_and_start(self):
-    #     self._lock.release()
-    #     self._process_timer.start()
-    #
     def write(self, path):
         self._lock.acquire()
+        self._write_cache.add(path)
+        self._lock.release()
 
-        self._lock.release()
-    #
-    # def remove(self, path):
-    #     self._reset_and_lock()
-    #     if path in self._paths_to_write:
-    #         self._paths_to_write.remove(path)
-    #     self._paths_to_remove.add(path)
-    #     self._unlock_and_start()
-    #
-    def _process_paths(self):
-        # grab the lock, copy/clear the sets, remove the lock
+    def remove(self, path):
         self._lock.acquire()
-    #     write_paths = set(self._paths_to_write)
-    #     self._paths_to_write = set()
-    #     remove_paths = set(self._paths_to_remove)
-    #     self._paths_to_remove = set()
+        if path in self._write_cache:
+            self._write_cache.remove(path)
+        self._remove_cache.add(path)
         self._lock.release()
-    #
-    #     with open(self._file_path, 'r+') as f:
+
+    def _process_paths(self):
+        self._lock.acquire()
+        write_paths = set(self._write_cache)
+        self._write_cache = set()
+        remove_paths = set(self._remove_cache)
+        self._paths_to_remove = set()
+        self._lock.release()
+
+        # todo: dont open if caches are empty
+        with open(self._path, 'r+') as f:
+            data = f.readlines()
+            for path in data:
+                stripped_path = path.strip('\n')
+                if stripped_path not in remove_paths:
+                    f.write(path)
+
+            for path in write_paths:
+                f.write(path + '\n')
+
+            f.truncate()
+
+        self._process_timer.start()
+
     #         found_first = False
     #         data = f.readlines()
     #         offset = 0
@@ -114,8 +118,6 @@ class FileWriter(object):
     #             f.truncate()
     #
     #         # if there are any paths that need writing, write them
-    #         for path in write_paths:
-    #             f.write(path + '\n')
 
 
 class InvalidPathError(Exception):
