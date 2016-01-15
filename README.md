@@ -4,10 +4,11 @@ qtcwatchdog is a python module that watches a given directory and updates the qt
 imported projects.
 
 ### Dependencies
-#### Python 2.7
+#### qtcwatchdog
+- python-2.7
 - watchdog 0.8.3
 
-### Tests
+#### Tests
 - mock
 - pyfakefs
 
