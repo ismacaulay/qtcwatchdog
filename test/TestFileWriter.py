@@ -1,4 +1,3 @@
-import threading
 import unittest, mock
 
 from updater import FileWriter, InvalidPathError
@@ -7,20 +6,16 @@ from updater import FileWriter, InvalidPathError
 class TestFileWriter(unittest.TestCase):
 
     def setUp(self):
-        self.is_file_patcher = mock.patch('os.path.isfile')
-        self.addCleanup(self.is_file_patcher.stop)
+        self.isfile_patcher = mock.patch('os.path.isfile')
+        self.addCleanup(self.isfile_patcher.stop)
         self.open_patcher = mock.patch('updater.open', mock.mock_open())
         self.addCleanup(self.open_patcher.stop)
         self.lock_patcher = mock.patch('threading.Lock')
         self.addCleanup(self.lock_patcher.stop)
-        self.timer_patcher = mock.patch('threading.Timer')
-        self.addCleanup(self.timer_patcher.stop)
 
-        self.mock_isfile = self.is_file_patcher.start()
+        self.mock_isfile = self.isfile_patcher.start()
         self.mock_open = self.open_patcher.start()
         self.mock_lock_obj = self.lock_patcher.start()
-        self.mock_timer_obj = self.timer_patcher.start()
-        self.mock_timer_obj.side_effect = self.save_timer_callback
 
     def create_patient(self, path='', clear=True):
         patient = FileWriter(path)
@@ -31,12 +26,7 @@ class TestFileWriter(unittest.TestCase):
     def clear_mocks(self):
         self.mock_isfile.reset_mock()
         self.mock_open.reset_mock()
-        self.mock_timer_obj.reset_mock()
-        self.mock_timer_obj.reset_mock()
-
-    def save_timer_callback(self, *args, **kwargs):
-        self.process_paths_func = kwargs['function']
-        return mock.DEFAULT
+        self.mock_lock_obj.reset_mock()
 
     def test_willRaiseExceptionIfPathIsInvalid(self):
         self.mock_isfile.return_value = False
@@ -51,24 +41,6 @@ class TestFileWriter(unittest.TestCase):
             self.create_patient('helloWorld', clear=False)
         except InvalidPathError:
             self.fail('InvalidPathError raised when it should not be.')
-
-    def test_willTruncateFileOnCreation(self):
-        self.create_patient('hello/World', clear=False)
-
-        self.mock_open.assert_called_with('hello/World', 'r+')
-        handle = self.mock_open()
-        handle.truncate.assert_called_with()
-
-    def test_willCreateTimerWithCorrectIntervalOnCreation(self):
-        self.create_patient(clear=False)
-        self.mock_timer_obj.assert_called_with(interval=1.0, function=mock.ANY)
-
-    def test_willStartTimerOnCreation(self):
-        mock_timer = self.mock_timer_obj.return_value
-
-        self.create_patient(clear=False)
-
-        mock_timer.start.assert_called_once_with()
 
     def test_willLockAndUnlockMutexOnWrite(self):
         mock_lock = self.mock_lock_obj.return_value
@@ -91,27 +63,19 @@ class TestFileWriter(unittest.TestCase):
     def test_willLockAndUnlockMutexWhenProcessingPaths(self):
         mock_lock = self.mock_lock_obj.return_value
 
-        self.create_patient()
-        self.process_paths_func()
+        patient = self.create_patient()
+        patient.process_caches()
 
         mock_lock.acquire.assert_called_once_with()
         mock_lock.release.assert_called_once_with()
 
     def test_willOpenCorrectFileWhenProcessingPaths(self):
         expected_file_path = 'hello/world.txt'
-        self.create_patient(expected_file_path)
+        patient = self.create_patient(expected_file_path)
 
-        self.process_paths_func()
+        patient.process_caches()
 
         self.mock_open.assert_called_once_with(expected_file_path, 'r+')
-
-    def test_willStartTimerAfterProcessingPaths(self):
-        mock_timer = self.mock_timer_obj.return_value
-
-        self.create_patient()
-        self.process_paths_func()
-
-        mock_timer.start.assert_called_once_with()
 
     def test_willWriteAllPathsToFileWhenProcessingPaths(self):
         patient = self.create_patient()
@@ -120,9 +84,10 @@ class TestFileWriter(unittest.TestCase):
         patient.write('path/to/helloWorld.txt')
         patient.write('this/is/helloWorld')
 
-        self.process_paths_func()
+        patient.process_caches()
 
         mock_file = self.mock_open()
+        self.assertEqual(mock_file.write.call_count, 3)
         mock_file.write.assert_has_calls([
             mock.call('helloWorld.txt\n'),
             mock.call('path/to/helloWorld.txt\n'),
@@ -133,10 +98,10 @@ class TestFileWriter(unittest.TestCase):
         patient = self.create_patient()
 
         patient.write('helloWorld.txt')
-        self.process_paths_func()
+        patient.process_caches()
 
         self.clear_mocks()
-        self.process_paths_func()
+        patient.process_caches()
         mock_file = self.mock_open()
         mock_file.write.assert_not_called()
 
@@ -146,7 +111,7 @@ class TestFileWriter(unittest.TestCase):
         patient.write('helloWorld')
         patient.remove('helloWorld')
 
-        self.process_paths_func()
+        patient.process_caches()
 
         mock_file = self.mock_open()
         mock_file.write.assert_not_called()
@@ -158,9 +123,10 @@ class TestFileWriter(unittest.TestCase):
         mock_file.readlines.return_value = data
 
         patient.remove('remove/this/path')
-        self.process_paths_func()
+        patient.process_caches()
 
         data.remove('remove/this/path\n')
+        self.assertEqual(mock_file.write.call_count, len(data))
         mock_file.write.assert_has_calls(self.covert_to_call_list(data), any_order=True)
 
     def test_willClearRemoveCacheWhenProcessingPaths(self):
@@ -170,12 +136,13 @@ class TestFileWriter(unittest.TestCase):
         mock_file.readlines.return_value = data
 
         patient.remove('remove/this/path')
-        self.process_paths_func()
+        patient.process_caches()
 
         self.clear_mocks()
         mock_file.reset_mock()
         mock_file.readlines.return_value = data
-        self.process_paths_func()
+        patient.process_caches()
+        self.assertEqual(mock_file.write.call_count, len(data))
         mock_file.write.assert_has_calls(self.covert_to_call_list(data), any_order=True)
 
     def test_willTruncateFileAfterWritingFile(self):
@@ -185,7 +152,7 @@ class TestFileWriter(unittest.TestCase):
         mock_file.readlines.return_value = data
 
         patient.remove('remove/this/path')
-        self.process_paths_func()
+        patient.process_caches()
 
         mock_file.truncate.assert_called_once_with()
 

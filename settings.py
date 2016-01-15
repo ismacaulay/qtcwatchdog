@@ -41,5 +41,6 @@ class Settings(object):
 
 class InvalidSettingsError(Exception):
     def __init__(self, msg):
+        print msg
         self.msg = msg
 
