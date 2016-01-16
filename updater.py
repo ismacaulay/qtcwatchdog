@@ -66,20 +66,21 @@ class FileWriter(object):
         self._lock.acquire()
         if path in self._write_cache:
             self._write_cache.remove(path)
-        self._remove_cache.add(path)
+        self._remove_cache.add(str(path))
         self._lock.release()
 
     def process_caches(self):
         self._lock.acquire()
         write_cache = set(self._write_cache)
         self._write_cache = set()
-        remove_cache = set(self._remove_cache)
+        remove_cache = list(self._remove_cache)
         self._remove_cache = set()
         self._lock.release()
 
         if len(write_cache) > 0 or len(remove_cache) > 0:
             with open(self._path, 'r+') as f:
                 data = f.readlines()
+                f.seek(0)
                 for path in data:
                     stripped_path = path.strip('\n')
                     if stripped_path not in remove_cache:
@@ -89,6 +90,9 @@ class FileWriter(object):
                     f.write(path + '\n')
 
                 f.truncate()
+
+            # with open(self._path, 'r') as f:
+            #     print 'file: {}'.format(f.readlines())
 
 
 class InvalidPathError(Exception):

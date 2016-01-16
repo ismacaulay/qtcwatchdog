@@ -150,6 +150,15 @@ class TestFileWriter(unittest.TestCase):
 
         mock_file.truncate.assert_called_once_with()
 
+    def test_willSeekBackToStartOfFileAfterReadingLines(self):
+        patient = self.create_patient()
+        mock_file = self.mock_open()
+
+        patient.remove('remove/this/path')
+        patient.process_caches()
+
+        mock_file.seek.assert_called_once_with(0)
+
     def test_willNotModifyFileIfCachesAreEmpty(self):
         patient = self.create_patient()
         patient.process_caches()
