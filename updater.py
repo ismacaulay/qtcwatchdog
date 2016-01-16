@@ -90,35 +90,6 @@ class FileWriter(object):
 
                 f.truncate()
 
-    #         found_first = False
-    #         data = f.readlines()
-    #         offset = 0
-    #
-    #         if len(remove_paths) > 0:
-    #             for line in data:
-    #                 stripped_line = line.strip('\n')  # strip the newline character off the end
-    #
-    #                 # if we should remove the line:
-    #                 #     if we have not removed any line yet, seek to the position in the file
-    #                 #     if we have removed a line, just remove the line from the paths to remove
-    #                 # else if we have seeked to the first line to remove:
-    #                 #     write the line to the file
-    #                 if stripped_line in remove_paths:
-    #                     if not found_first:
-    #                         found_first = True
-    #                         f.seek(offset)
-    #                     remove_paths.remove(stripped_line)
-    #                 elif found_first:
-    #                     f.write(line)
-    #                     offset += len(line)
-    #                 else:
-    #                     offset += len(line)
-    #
-    #             f.seek(offset)
-    #             f.truncate()
-    #
-    #         # if there are any paths that need writing, write them
-
 
 class InvalidPathError(Exception):
     def __init__(self, msg):
