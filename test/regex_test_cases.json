@@ -1,0 +1,28 @@
+
+{
+  "test_case": {
+    "regex": "^.*\\.(cxx|h|py)$",
+
+    "files_to_add": [
+      "helloWorld.cxx",
+      "helloWorld.doc",
+      "helloWorld.py",
+      "helloWorld.h",
+      "helloWorld.txt",
+      "helloWorld.cxx.bak",
+      "helloWorld.cxx.1234"
+    ],
+    "expected_paths": [
+      "helloWorld.cxx",
+      "helloWorld.h",
+      "helloWorld.py"
+    ],
+    "expected_missing_paths": [
+      "helloWorld.txt",
+      "helloWorld.doc",
+      "initial_file.txt",
+      "helloWorld.cxx.bak",
+      "helloWorld.cxx.1234"
+    ]
+  }
+}

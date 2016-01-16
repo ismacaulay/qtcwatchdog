@@ -8,7 +8,9 @@ imported projects.
 - python-2.7
 - watchdog 0.8.3
 
-#### Tests
+#### tests
 - mock
 - pyfakefs
+- ddt
+
 
