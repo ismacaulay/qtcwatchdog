@@ -85,6 +85,14 @@ class TestUpdateFilesFeature(fake_filesystem_unittest.TestCase):
         self.verify_files_contains_paths(expected_paths)
         self.verify_files_does_not_contain_paths(expected_missing_paths)
 
+    def test_willStopObserverWhenWatchdogStopped(self):
+        self.setup_project_directory()
+        self.create_and_start_watchdog()
+
+        self.watchdog.stop()
+
+        self.assertFalse(self.fs_observer.running)
+
     def verify_files_contains_paths(self, paths):
         (files_contains, msg) = self.files_contains_paths(paths)
         self.assertTrue(files_contains, msg)
@@ -106,8 +114,8 @@ class TestUpdateFilesFeature(fake_filesystem_unittest.TestCase):
         return True, 'All paths in files file. paths: {}'.format(str(paths))
 
     def create_and_start_watchdog(self):
-        watchdog = QtcWatchdog(self.project_settings)
-        watchdog.start()
+        self.watchdog = QtcWatchdog(self.project_settings)
+        self.watchdog.start()
 
     def setup_project_directory(self):
         self.project_settings = {
@@ -162,15 +170,16 @@ class MockObserver(object):
     def __init__(self, fs):
         self.fs = fs
         self.event_handler = None
+        self.running = False
 
     def schedule(self, event_handler, project_path, recursive):
         self.event_handler = event_handler
 
     def start(self):
-        pass
+        self.running = True
 
     def stop(self):
-        pass
+        self.running = False
 
     def join(self):
         pass
