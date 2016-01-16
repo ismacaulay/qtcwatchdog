@@ -1,6 +1,6 @@
 import unittest, mock
 
-from updater import FileWriter, InvalidPathError
+from file import FileWriter, InvalidPathError
 
 
 class TestFileWriter(unittest.TestCase):
@@ -8,7 +8,7 @@ class TestFileWriter(unittest.TestCase):
     def setUp(self):
         self.isfile_patcher = mock.patch('os.path.isfile')
         self.addCleanup(self.isfile_patcher.stop)
-        self.open_patcher = mock.patch('updater.open', mock.mock_open())
+        self.open_patcher = mock.patch('file.open', mock.mock_open())
         self.addCleanup(self.open_patcher.stop)
         self.lock_patcher = mock.patch('threading.Lock')
         self.addCleanup(self.lock_patcher.stop)
