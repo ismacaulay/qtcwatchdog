@@ -1,6 +1,6 @@
 import os
-import mock
-from ddt import ddt, file_data, unpack
+import unittest, mock
+from ddt import ddt, file_data
 from pyfakefs import fake_filesystem_unittest
 
 from qtcwatchdog import QtcWatchdog
@@ -190,3 +190,6 @@ class MockObserver(object):
         event.dest_path = dest_path
         event.is_directory = is_directory
         return event
+
+if __name__ == '__main__':
+    unittest.main()

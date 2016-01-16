@@ -116,3 +116,6 @@ class TestSettings(unittest.TestCase):
 def anonymous_settings_dict():
     return {'project_path': os.getcwd()}
 
+if __name__ == '__main__':
+    unittest.main()
+

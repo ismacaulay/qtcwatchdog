@@ -183,3 +183,6 @@ class TestFileWriter(unittest.TestCase):
             calls.append(mock.call(l))
         return calls
 
+
+if __name__ == '__main__':
+    unittest.main()

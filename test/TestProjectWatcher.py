@@ -139,5 +139,7 @@ class TestProjectWatcher(unittest.TestCase):
         mock_updater.move.assert_called_once_with('helloWorld', 'destination', True)
 
 
+if __name__ == '__main__':
+    unittest.main()
 
 

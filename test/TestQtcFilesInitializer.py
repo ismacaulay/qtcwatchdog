@@ -91,3 +91,6 @@ def external_includes_structure(include_root):
     structure.append((os.path.join(root, 'external_subdir2'), [], []))
 
     return structure
+
+if __name__ == '__main__':
+    unittest.main()

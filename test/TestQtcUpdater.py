@@ -66,3 +66,6 @@ class TestQtcUpdater(unittest.TestCase):
         mock_files.update.assert_called_once_with()
         mock_includes.update.assert_called_once_with()
 
+if __name__ == '__main__':
+    unittest.main()
+

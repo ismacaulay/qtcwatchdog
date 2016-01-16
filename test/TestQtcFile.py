@@ -69,3 +69,7 @@ class TestQtcFile(unittest.TestCase):
         patient.update()
 
         mock_writer.process_caches.assert_called_once_with()
+
+if __name__ == '__main__':
+    unittest.main()
+

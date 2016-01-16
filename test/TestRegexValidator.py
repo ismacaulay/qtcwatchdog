@@ -31,3 +31,6 @@ class TestRegexValidator(unittest.TestCase):
 
         self.assertTrue(patient.is_valid('hello world this is a string'))
 
+if __name__ == '__main__':
+    unittest.main()
+
