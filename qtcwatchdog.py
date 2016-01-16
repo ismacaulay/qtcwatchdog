@@ -26,7 +26,6 @@ class QtcWatchdog(object):
         initializer.initialize_includes(settings.project_path, settings.includes_paths)
 
         self._watcher = ProjectWatcher(settings.project_path, updater)
-        print self._watcher
 
     def start(self):
         self._watcher.start()

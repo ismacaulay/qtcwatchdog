@@ -7,58 +7,62 @@ from updater import QtcUpdater, QtcFile
 
 class TestQtcUpdater(unittest.TestCase):
 
-    def test_addFileAddsTheFileToTheFilesFile(self):
-        files_file = mock.create_autospec(QtcFile)
-        includes_file = mock.create_autospec(QtcFile)
-
-        patient = QtcUpdater(files=files_file, includes=includes_file)
+    @mock.patch('updater.QtcFile')
+    @mock.patch('updater.QtcFile')
+    def test_addFileAddsTheFileToTheFilesFile(self, mock_files, mock_includes):
+        patient = QtcUpdater(mock_files, mock_includes)
         patient.add('hello/World', is_dir=False)
 
-        files_file.write.assert_called_with('hello/World')
+        mock_files.write.assert_called_with('hello/World')
 
-    def test_addDirAddsTheDirToTheIncludesFile(self):
-        files_file = mock.create_autospec(QtcFile)
-        includes_file = mock.create_autospec(QtcFile)
-
-        patient = QtcUpdater(files=files_file, includes=includes_file)
+    @mock.patch('updater.QtcFile')
+    @mock.patch('updater.QtcFile')
+    def test_addDirAddsTheDirToTheIncludesFile(self, mock_files, mock_includes):
+        patient = QtcUpdater(mock_files, mock_includes)
         patient.add('hello/World', is_dir=True)
 
-        includes_file.write.assert_called_with('hello/World')
+        mock_includes.write.assert_called_with('hello/World')
 
-    def test_removeFileRemovesTheFileFromTheFilesFile(self):
-        files_file = mock.create_autospec(QtcFile)
-        includes_file = mock.create_autospec(QtcFile)
-
-        patient = QtcUpdater(files=files_file, includes=includes_file)
+    @mock.patch('updater.QtcFile')
+    @mock.patch('updater.QtcFile')
+    def test_removeFileRemovesTheFileFromTheFilesFile(self, mock_files, mock_includes):
+        patient = QtcUpdater(mock_files, mock_includes)
         patient.remove('hello/World', is_dir=False)
 
-        files_file.remove.assert_called_with('hello/World')
+        mock_files.remove.assert_called_with('hello/World')
 
-    def test_removeDirRemovesTheFileFromTheIncludesFile(self):
-        files_file = mock.create_autospec(QtcFile)
-        includes_file = mock.create_autospec(QtcFile)
-
-        patient = QtcUpdater(files=files_file, includes=includes_file)
+    @mock.patch('updater.QtcFile')
+    @mock.patch('updater.QtcFile')
+    def test_removeDirRemovesTheFileFromTheIncludesFile(self, mock_files, mock_includes):
+        patient = QtcUpdater(mock_files, mock_includes)
         patient.remove('hello/World', is_dir=True)
 
-        includes_file.remove.assert_called_with('hello/World')
+        mock_includes.remove.assert_called_with('hello/World')
 
-    def test_moveWillRemoveSrcAndAddDestToFilesFile(self):
-        files_file = mock.create_autospec(QtcFile)
-        includes_file = mock.create_autospec(QtcFile)
-
-        patient = QtcUpdater(files=files_file, includes=includes_file)
+    @mock.patch('updater.QtcFile')
+    @mock.patch('updater.QtcFile')
+    def test_moveWillRemoveSrcAndAddDestToFilesFile(self, mock_files, mock_includes):
+        patient = QtcUpdater(mock_files, mock_includes)
         patient.move('hello/World', 'world/Hello', is_dir=False)
 
-        files_file.remove.assert_called_with('hello/World')
-        files_file.write.assert_called_with('world/Hello')
+        mock_files.remove.assert_called_with('hello/World')
+        mock_files.write.assert_called_with('world/Hello')
 
-    def test_moveWillRemoveSrcAndAddDestToIncludesFile(self):
-        files_file = mock.create_autospec(QtcFile)
-        includes_file = mock.create_autospec(QtcFile)
-
-        patient = QtcUpdater(files=files_file, includes=includes_file)
+    @mock.patch('updater.QtcFile')
+    @mock.patch('updater.QtcFile')
+    def test_moveWillRemoveSrcAndAddDestToIncludesFile(self, mock_files, mock_includes):
+        patient = QtcUpdater(mock_files, mock_includes)
         patient.move('hello/World', 'world/Hello', is_dir=True)
 
-        includes_file.remove.assert_called_with('hello/World')
-        includes_file.write.assert_called_with('world/Hello')
+        mock_includes.remove.assert_called_with('hello/World')
+        mock_includes.write.assert_called_with('world/Hello')
+
+    @mock.patch('updater.QtcFile')
+    @mock.patch('updater.QtcFile')
+    def test_willUpdateBothFilesAndIncludes(self, mock_files, mock_includes):
+        patient = QtcUpdater(mock_files, mock_includes)
+        patient.update_files()
+
+        mock_files.update.assert_called_once_with()
+        mock_includes.update.assert_called_once_with()
+

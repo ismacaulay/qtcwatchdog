@@ -2,49 +2,55 @@
 import unittest
 import mock
 
-from updater import QtcFile, FileWriter
-from validator import RegexValidator
+from updater import QtcFile
 
 
 class TestQtcFile(unittest.TestCase):
 
-    def test_writeWillWriteIfPathIsValid(self):
-        writer = mock.create_autospec(FileWriter)
-        validator = mock.create_autospec(RegexValidator)
-        validator.is_valid.return_value = True
+    @mock.patch('updater.FileWriter')
+    @mock.patch('validator.RegexValidator')
+    def test_writeWillWriteIfPathIsValid(self, mock_writer, mock_validator):
+        mock_validator.is_valid.return_value = True
 
-        patient = QtcFile(writer, validator)
+        patient = QtcFile(mock_writer, mock_validator)
         patient.write('hello/World')
 
-        writer.write.assert_called_with('hello/World')
+        mock_writer.write.assert_called_with('hello/World')
 
-    def test_writeWillNotWriteIfPathIsInvalid(self):
-        writer = mock.create_autospec(FileWriter)
-        validator = mock.create_autospec(RegexValidator)
-        validator.is_valid.return_value = False
+    @mock.patch('updater.FileWriter')
+    @mock.patch('validator.RegexValidator')
+    def test_writeWillNotWriteIfPathIsInvalid(self, mock_writer, mock_validator):
+        mock_validator.is_valid.return_value = False
 
-        patient = QtcFile(writer, validator)
+        patient = QtcFile(mock_writer, mock_validator)
         patient.write('hello/World')
 
-        writer.write.assert_not_called()
+        mock_writer.write.assert_not_called()
 
-    def test_removeWillRemovePathIsPathIsValid(self):
-        writer = mock.create_autospec(FileWriter)
-        validator = mock.create_autospec(RegexValidator)
-        validator.is_valid.return_value = True
+    @mock.patch('updater.FileWriter')
+    @mock.patch('validator.RegexValidator')
+    def test_removeWillRemovePathIsPathIsValid(self, mock_writer, mock_validator):
+        mock_validator.is_valid.return_value = True
 
-        patient = QtcFile(writer, validator)
+        patient = QtcFile(mock_writer, mock_validator)
         patient.remove('hello/World')
 
-        writer.remove.assert_called_with('hello/World')
+        mock_writer.remove.assert_called_with('hello/World')
 
-    def test_removeWillNotRemovePathIfPathIsInvalid(self):
-        writer = mock.create_autospec(FileWriter)
-        validator = mock.create_autospec(RegexValidator)
-        validator.is_valid.return_value = False
+    @mock.patch('updater.FileWriter')
+    @mock.patch('validator.RegexValidator')
+    def test_removeWillNotRemovePathIfPathIsInvalid(self, mock_writer, mock_validator):
+        mock_validator.is_valid.return_value = False
 
-        patient = QtcFile(writer, validator)
+        patient = QtcFile(mock_writer, mock_validator)
         patient.remove('hello/World')
 
-        writer.remove.assert_not_called()
+        mock_writer.remove.assert_not_called()
 
+    @mock.patch('updater.FileWriter')
+    @mock.patch('validator.RegexValidator')
+    def test_updateWithProcessCaches(self, mock_writer, mock_validator):
+        patient = QtcFile(mock_writer, mock_validator)
+        patient.update()
+
+        mock_writer.process_caches.assert_called_once_with()

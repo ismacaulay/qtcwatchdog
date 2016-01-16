@@ -72,6 +72,7 @@ class TestFileWriter(unittest.TestCase):
     def test_willOpenCorrectFileWhenProcessingPaths(self):
         expected_file_path = 'hello/world.txt'
         patient = self.create_patient(expected_file_path)
+        patient.write('helloWorld')
 
         patient.process_caches()
 
@@ -99,11 +100,10 @@ class TestFileWriter(unittest.TestCase):
 
         patient.write('helloWorld.txt')
         patient.process_caches()
-
         self.clear_mocks()
+
         patient.process_caches()
-        mock_file = self.mock_open()
-        mock_file.write.assert_not_called()
+        self.mock_open.assert_not_called()
 
     def test_willRemovePathFromCacheBeforeProcessingPaths(self):
         patient = self.create_patient()
@@ -131,19 +131,13 @@ class TestFileWriter(unittest.TestCase):
 
     def test_willClearRemoveCacheWhenProcessingPaths(self):
         patient = self.create_patient()
-        mock_file = self.mock_open()
-        data = self.file_data()
-        mock_file.readlines.return_value = data
 
         patient.remove('remove/this/path')
         patient.process_caches()
-
         self.clear_mocks()
-        mock_file.reset_mock()
-        mock_file.readlines.return_value = data
+
         patient.process_caches()
-        self.assertEqual(mock_file.write.call_count, len(data))
-        mock_file.write.assert_has_calls(self.covert_to_call_list(data), any_order=True)
+        self.mock_open.assert_not_called()
 
     def test_willTruncateFileAfterWritingFile(self):
         patient = self.create_patient()
@@ -155,6 +149,12 @@ class TestFileWriter(unittest.TestCase):
         patient.process_caches()
 
         mock_file.truncate.assert_called_once_with()
+
+    def test_willNotModifyFileIfCachesAreEmpty(self):
+        patient = self.create_patient()
+        patient.process_caches()
+
+        self.mock_open.assert_not_called()
 
     def file_data(self):
         return [

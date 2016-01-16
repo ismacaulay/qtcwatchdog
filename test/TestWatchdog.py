@@ -13,7 +13,6 @@ class TestWatchdog(fake_filesystem_unittest.TestCase):
     def tearDown(self):
         pass
 
-
     @mock.patch('qtcwatchdog.ProjectWatcher')
     @mock.patch('watcher.Observer')
     @mock.patch('watcher.running')
@@ -22,12 +21,10 @@ class TestWatchdog(fake_filesystem_unittest.TestCase):
         mock_observer_obj.return_value = fs_observer
         mock_running.return_value = False
 
-
-
         project_watcher_obj.side_effect = save_updater
         settings = {
             'project_name': 'watchdog',
-            'project_path': '/project/watchdog',
+            'project_path': os.path.relpath('/project/watchdog'),
 
             'files': {
                 'regex': '',
@@ -41,26 +38,27 @@ class TestWatchdog(fake_filesystem_unittest.TestCase):
         }
 
         os.makedirs(settings['project_path'])
-        self.fs.CreateFile('/project/watchdog/watchdog.files')
-        self.fs.CreateFile('/project/watchdog/watchdog.includes')
+        self.fs.CreateFile(os.path.relpath('/project/watchdog/watchdog.files'))
+        self.fs.CreateFile(os.path.relpath('/project/watchdog/watchdog.includes'))
 
         watchdog = QtcWatchdog(settings)
         watchdog.start()
 
-        fs_observer.create_file('/project/watchdog/test.txt')
-        fs_observer.create_file('/project/watchdog/test1.txt')
-        fs_observer.create_file('/project/watchdog/test2.txt')
-        fs_observer.create_file('/project/watchdog/test3.txt')
+        fs_observer.create_file(os.path.relpath('/project/watchdog/test.txt'))
+        fs_observer.create_file(os.path.relpath('/project/watchdog/test1.txt'))
+        fs_observer.create_file(os.path.relpath('/project/watchdog/test2.txt'))
+        fs_observer.create_file(os.path.relpath('/project/watchdog/test3.txt'))
 
         updater.update_files()
 
-        self.assertTrue(self.files_contains_path('/project/watchdog/test.txt'))
-        self.assertTrue(self.files_contains_path('/project/watchdog/test1.txt'))
-        self.assertTrue(self.files_contains_path('/project/watchdog/test2.txt'))
-        self.assertTrue(self.files_contains_path('/project/watchdog/test3.txt'))
+        self.assertTrue(self.files_contains_path(os.path.relpath('/project/watchdog/test.txt')))
+        self.assertTrue(self.files_contains_path(os.path.relpath('/project/watchdog/test1.txt')))
+        self.assertTrue(self.files_contains_path(os.path.relpath('/project/watchdog/test2.txt')))
+        self.assertTrue(self.files_contains_path(os.path.relpath('/project/watchdog/test3.txt')))
 
-    def files_contains_path(self, path):
-        with open('/project/watchdog/watchdog.files') as f:
+    @staticmethod
+    def files_contains_path(path):
+        with open(os.path.relpath('/project/watchdog/watchdog.files')) as f:
             lines = f.readlines()
             for line in lines:
                 if path in line:

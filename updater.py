@@ -18,9 +18,8 @@ class QtcUpdater(object):
         self._perform_operation(dest, is_dir, self._files.write, self._includes.write)
 
     def update_files(self):
-        print 'QtcUpdater::update_files... implement me!'
-        # self._files.update()
-        # self._includes.update()
+        self._files.update()
+        self._includes.update()
 
     @staticmethod
     def _perform_operation(path, is_dir, files_operation, includes_operation):
@@ -44,8 +43,7 @@ class QtcFile(object):
             self._writer.remove(path)
 
     def update(self):
-        print 'QtcFile::update... implement me!'
-        # self._writer.process_caches()
+        self._writer.process_caches()
 
 
 class FileWriter(object):
@@ -73,27 +71,24 @@ class FileWriter(object):
 
     def process_caches(self):
         self._lock.acquire()
-        write_paths = set(self._write_cache)
+        write_cache = set(self._write_cache)
         self._write_cache = set()
-        remove_paths = set(self._remove_cache)
+        remove_cache = set(self._remove_cache)
         self._remove_cache = set()
         self._lock.release()
 
-        # todo: dont open if caches are empty
-        print self._path
+        if len(write_cache) > 0 or len(remove_cache) > 0:
+            with open(self._path, 'r+') as f:
+                data = f.readlines()
+                for path in data:
+                    stripped_path = path.strip('\n')
+                    if stripped_path not in remove_cache:
+                        f.write(path)
 
-        with open(self._path, 'r+') as f:
-            data = f.readlines()
-            for path in data:
-                stripped_path = path.strip('\n')
-                if stripped_path not in remove_paths:
-                    f.write(path)
+                for path in write_cache:
+                    f.write(path + '\n')
 
-            for path in write_paths:
-                f.write(path + '\n')
-
-            f.truncate()
-
+                f.truncate()
 
     #         found_first = False
     #         data = f.readlines()
