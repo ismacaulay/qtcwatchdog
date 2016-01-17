@@ -138,6 +138,8 @@ class TestProjectWatcher(unittest.TestCase):
 
         mock_updater.move.assert_called_once_with('helloWorld', 'destination', True)
 
+
+class TestRunning(unittest.TestCase):
     def test_runningAlwaysReturnsTrue(self):
         import watcher
         self.assertTrue(watcher.running())
