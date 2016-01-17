@@ -8,7 +8,6 @@ from watcher import ProjectWatcher
 
 class WatchdogAcceptanceTest(fake_filesystem_unittest.TestCase):
     def setUp(self):
-        print 'SETTING UP'
         self.setUpPyfakefs()
 
         self.fs_observer = FakeObserver(self.fs)
@@ -60,6 +59,14 @@ class WatchdogAcceptanceTest(fake_filesystem_unittest.TestCase):
         for f in self.initial_files:
             self.fs.CreateFile(f)
 
+        self.initial_directories = [
+            os.path.join(self.project_settings['project_path'], 'directory1'),
+            os.path.join(self.project_settings['project_path'], 'directory2'),
+            os.path.join(self.project_settings['project_path'], 'directory3'),
+        ]
+        for d in self.initial_directories:
+            self.fs.CreateDirectory(d)
+
     def create_and_start_watchdog(self):
         self.watchdog = QtcWatchdog(self.project_settings)
         self.watchdog.start()
@@ -67,3 +74,12 @@ class WatchdogAcceptanceTest(fake_filesystem_unittest.TestCase):
     def save_updater(self, project_path_arg, updater_arg):
         self.file_updater = updater_arg
         return ProjectWatcher(project_path_arg, updater_arg)
+
+    def file_contains_paths(self, file_path, paths=[]):
+        with open(file_path) as f:
+            lines = [f.strip('\n') for f in f.readlines()]
+            for path in paths:
+                if path not in lines:
+                    return False, '{} does not contain path {}'.format(file_path, path)
+        return True, 'All paths in {}. paths: {}'.format(file_path, str(paths))
+

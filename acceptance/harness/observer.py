@@ -24,9 +24,17 @@ class FakeObserver(object):
         self.fs.CreateFile(path)
         self.event_handler.on_created(self.create_event(src_path=path))
 
+    def create_directory(self, path):
+        self.fs.CreateDirectory(path)
+        self.event_handler.on_created(self.create_event(src_path=path, is_directory=True))
+
     def remove_file(self, path):
         self.fs.RemoveObject(path)
         self.event_handler.on_deleted(self.create_event(src_path=path))
+
+    def remove_directory(self, path):
+        self.fs.RemoveObject(path)
+        self.event_handler.on_deleted(self.create_event(src_path=path, is_directory=True))
 
     @staticmethod
     def create_event(src_path='', dest_path='', is_directory=False):

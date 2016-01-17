@@ -16,7 +16,7 @@ class TestUpdateFilesFeature(WatchdogAcceptanceTest):
         self.create_and_start_watchdog()
 
         self.verify_files_does_not_contain_path(self.files_file)
-        self.verify_files_does_not_contain_path(self.includes_file)
+        self.verify_files_does_not_contain_path (self.includes_file)
 
     def test_willAddFilePathToFilesFile(self):
         self.create_and_start_watchdog()
@@ -36,6 +36,8 @@ class TestUpdateFilesFeature(WatchdogAcceptanceTest):
         self.verify_files_does_not_contain_paths(removed_files)
         self.verify_files_contains_paths([added_files[0], self.initial_files[0]])
 
+    # todo: moved tests
+
     @file_data('test_data/files_regex_td.json')
     def test_willOnlyIncludeFilesThatMatchTheRegex(self, regex, files_to_add, expected_paths, expected_missing_paths):
         self.setup_project_files_regex(regex)
@@ -50,8 +52,10 @@ class TestUpdateFilesFeature(WatchdogAcceptanceTest):
         self.verify_files_contains_paths(expected_paths)
         self.verify_files_does_not_contain_paths(expected_missing_paths)
 
+    # todo: excludes tests
+
     def verify_files_contains_paths(self, paths):
-        (files_contains, msg) = self.files_contains_paths(paths)
+        (files_contains, msg) = self.file_contains_paths(self.files_file, paths)
         self.assertTrue(files_contains, msg)
 
     def verify_files_does_not_contain_paths(self, paths):
@@ -59,16 +63,8 @@ class TestUpdateFilesFeature(WatchdogAcceptanceTest):
             self.verify_files_does_not_contain_path(f)
 
     def verify_files_does_not_contain_path(self, path):
-        (files_contains, msg) = self.files_contains_paths([path])
+        (files_contains, msg) = self.file_contains_paths(self.files_file, [path])
         self.assertFalse(files_contains, msg)
-
-    def files_contains_paths(self, paths):
-        with open(self.files_file) as f:
-            lines = [f.strip('\n') for f in f.readlines()]
-            for path in paths:
-                if path not in lines:
-                    return False, 'files contains path: {}'.format(path)
-        return True, 'All paths in files file. paths: {}'.format(str(paths))
 
     def setup_project_files_regex(self, regex):
         self.project_settings['files']['regex'] = regex

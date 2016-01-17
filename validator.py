@@ -4,6 +4,7 @@ import re
 
 class RegexValidator(object):
     def __init__(self, pattern, excludes):
+        # todo: handle None for pattern/excludes
         if pattern == '':
             pattern = '.*'  # match anything
         if excludes == '':

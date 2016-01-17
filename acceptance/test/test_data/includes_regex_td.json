@@ -1,0 +1,21 @@
+
+{
+  "test_case": {
+    "regex": ".*(included).*",
+
+    "dirs_to_add": [
+      "included",
+      "included/subdir",
+      "excluded",
+      "excluded/subdir"
+    ],
+    "expected_paths": [
+      "included",
+      "included/subdir"
+    ],
+    "expected_missing_paths": [
+      "excluded",
+      "excluded/subdir"
+    ]
+  }
+}
