@@ -36,6 +36,11 @@ class FakeObserver(object):
         self.fs.RemoveObject(path)
         self.event_handler.on_deleted(self.create_event(src_path=path, is_directory=True))
 
+    def move_file(self, src, dest):
+        self.fs.RemoveObject(src)
+        self.fs.CreateFile(dest)
+        self.event_handler.on_moved(self.create_event(src_path=src, dest_path=dest))
+
     def move_directory(self, src, dest):
         self.fs.RemoveObject(src)
         self.fs.CreateDirectory(dest)

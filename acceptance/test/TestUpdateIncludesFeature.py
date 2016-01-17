@@ -64,13 +64,18 @@ class TestUpdateIncludesFeature(WatchdogAcceptanceTest):
         self.verify_includes_does_not_contain_paths(expected_missing)
 
     @file_data('test_data/includes_moved_td.json')
-    def test_willRemoveMovedDirectoriesAndReAddThemIfSettingsAllow(self, regex, excludes, src_dir, dest_dir, expected, expected_missing):
+    def test_willRemoveMovedDirectoriesAndReAddThemIfSettingsAllow(self, regex, excludes, src, dest, expected, expected_missing):
         self.setup_project_includes_regex(regex)
         self.setup_project_includes_excludes(excludes)
         self.create_and_start_watchdog()
-        self.create_directories([src_dir])
 
-        self.move_directory(src_dir, dest_dir)
+        src = os.path.join(self.project_settings['project_path'], src)
+        dest = os.path.join(self.project_settings['project_path'], dest)
+        expected = [os.path.join(self.project_settings['project_path'], d) for d in expected]
+        expected_missing = [os.path.join(self.project_settings['project_path'], d) for d in expected_missing]
+        self.create_directories([src])
+
+        self.move_directory(src, dest)
 
         self.verify_includes_contains_paths(expected)
         self.verify_includes_does_not_contain_paths(expected_missing)

@@ -36,23 +36,50 @@ class TestUpdateFilesFeature(WatchdogAcceptanceTest):
         self.verify_files_does_not_contain_paths(removed_files)
         self.verify_files_contains_paths([added_files[0], self.initial_files[0]])
 
-    # todo: moved tests
-
     @file_data('test_data/files_regex_td.json')
-    def test_willOnlyIncludeFilesThatMatchTheRegex(self, regex, files_to_add, expected_paths, expected_missing_paths):
+    def test_willOnlyIncludeFilesThatMatchTheRegex(self, regex, files_to_add, expected, expected_missing):
         self.setup_project_files_regex(regex)
         self.create_and_start_watchdog()
 
         files_to_add = [os.path.join(self.project_settings['project_path'], f) for f in files_to_add]
-        expected_paths = [os.path.join(self.project_settings['project_path'], f) for f in expected_paths]
-        expected_missing_paths = [os.path.join(self.project_settings['project_path'], f) for f in expected_missing_paths]
+        expected = [os.path.join(self.project_settings['project_path'], f) for f in expected]
+        expected_missing = [os.path.join(self.project_settings['project_path'], f) for f in expected_missing]
 
         self.create_files(files_to_add)
 
-        self.verify_files_contains_paths(expected_paths)
-        self.verify_files_does_not_contain_paths(expected_missing_paths)
+        self.verify_files_contains_paths(expected)
+        self.verify_files_does_not_contain_paths(expected_missing)
 
-    # todo: excludes tests
+    @file_data('test_data/files_excludes_td.json')
+    def test_willOnlyIncludeFilesThatMatchTheRegex(self, excludes, files_to_add, expected, expected_missing):
+        self.setup_project_files_excludes(excludes)
+        self.create_and_start_watchdog()
+
+        files_to_add = [os.path.join(self.project_settings['project_path'], f) for f in files_to_add]
+        expected = [os.path.join(self.project_settings['project_path'], f) for f in expected]
+        expected_missing = [os.path.join(self.project_settings['project_path'], f) for f in expected_missing]
+
+        self.create_files(files_to_add)
+
+        self.verify_files_contains_paths(expected)
+        self.verify_files_does_not_contain_paths(expected_missing)
+
+    @file_data('test_data/files_moved_td.json')
+    def test_willRemoveMovedFilesAndReAddThemIfSettingsAllow(self, regex, excludes, src, dest, expected, expected_missing):
+        self.setup_project_files_regex(regex)
+        self.setup_project_files_excludes(excludes)
+        self.create_and_start_watchdog()
+
+        src = os.path.join(self.project_settings['project_path'], src)
+        dest = os.path.join(self.project_settings['project_path'], dest)
+        expected = [os.path.join(self.project_settings['project_path'], f) for f in expected]
+        expected_missing = [os.path.join(self.project_settings['project_path'], f) for f in expected_missing]
+        self.create_files([src])
+
+        self.move_file(src, dest)
+
+        self.verify_files_contains_paths(expected)
+        self.verify_files_does_not_contain_paths(expected_missing)
 
     def verify_files_contains_paths(self, paths):
         (files_contains, msg) = self.file_contains_paths(self.files_file, paths)
@@ -68,6 +95,9 @@ class TestUpdateFilesFeature(WatchdogAcceptanceTest):
 
     def setup_project_files_regex(self, regex):
         self.project_settings['files']['regex'] = regex
+
+    def setup_project_files_excludes(self, regex):
+        self.project_settings['files']['excludes'] = regex
 
     def create_files(self, files):
         for f in files:
@@ -88,6 +118,9 @@ class TestUpdateFilesFeature(WatchdogAcceptanceTest):
             self.fs_observer.remove_file(f)
         self.file_updater.update_files()
 
+    def move_file(self, src, dest):
+        self.fs_observer.move_file(src, dest)
+        self.file_updater.update_files()
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,7 +1,7 @@
 
 {
   "test_case": {
-    "regex": "^.*\\.(cxx|h|py)$",
+    "excludes": "^.*\\.(txt|doc|bak|1234)$",
 
     "files_to_add": [
       "helloWorld.cxx",
