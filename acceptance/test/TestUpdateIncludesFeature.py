@@ -35,23 +35,45 @@ class TestUpdateIncludesFeature(WatchdogAcceptanceTest):
         self.verify_includes_does_not_contain_paths(removed_directories)
         self.verify_includes_contains_paths([added_directories[0], self.initial_directories[0]])
 
-    # todo: moved tests
-
     @file_data('test_data/includes_regex_td.json')
-    def test_willOnlyIncludeDirectoriesThatMatchTheRegex(self, regex, dirs_to_add, expected_paths, expected_missing_paths):
+    def test_willOnlyIncludeDirectoriesThatMatchTheRegex(self, regex, dirs_to_add, expected, expected_missing):
         self.setup_project_includes_regex(regex)
         self.create_and_start_watchdog()
 
         dirs_to_add = [os.path.join(self.project_settings['project_path'], *d.split('/')) for d in dirs_to_add]
-        expected_paths = [os.path.join(self.project_settings['project_path'], *d.split('/')) for d in expected_paths]
-        expected_missing_paths = [os.path.join(self.project_settings['project_path'], *d.split('/')) for d in expected_missing_paths]
+        expected = [os.path.join(self.project_settings['project_path'], *d.split('/')) for d in expected]
+        expected_missing = [os.path.join(self.project_settings['project_path'], *d.split('/')) for d in expected_missing]
 
         self.create_directories(dirs_to_add)
 
-        self.verify_includes_contains_paths(expected_paths)
-        self.verify_includes_does_not_contain_paths(expected_missing_paths)
+        self.verify_includes_contains_paths(expected)
+        self.verify_includes_does_not_contain_paths(expected_missing)
 
-    # todo: excludes tests
+    @file_data('test_data/includes_excludes_td.json')
+    def test_willNotIncludeDirectoriesThatMatchExcludePattern(self, excludes, dirs_to_add, expected, expected_missing):
+        self.setup_project_includes_excludes(excludes)
+        self.create_and_start_watchdog()
+
+        dirs_to_add = [os.path.join(self.project_settings['project_path'], *d.split('/')) for d in dirs_to_add]
+        expected = [os.path.join(self.project_settings['project_path'], *d.split('/')) for d in expected]
+        expected_missing = [os.path.join(self.project_settings['project_path'], *d.split('/')) for d in expected_missing]
+
+        self.create_directories(dirs_to_add)
+
+        self.verify_includes_contains_paths(expected)
+        self.verify_includes_does_not_contain_paths(expected_missing)
+
+    @file_data('test_data/includes_moved_td.json')
+    def test_willRemoveMovedDirectoriesAndReAddThemIfSettingsAllow(self, regex, excludes, src_dir, dest_dir, expected, expected_missing):
+        self.setup_project_includes_regex(regex)
+        self.setup_project_includes_excludes(excludes)
+        self.create_and_start_watchdog()
+        self.create_directories([src_dir])
+
+        self.move_directory(src_dir, dest_dir)
+
+        self.verify_includes_contains_paths(expected)
+        self.verify_includes_does_not_contain_paths(expected_missing)
 
     def verify_includes_contains_paths(self, paths):
         (contains, msg) = self.file_contains_paths(self.includes_file, paths)
@@ -67,6 +89,9 @@ class TestUpdateIncludesFeature(WatchdogAcceptanceTest):
 
     def setup_project_includes_regex(self, regex):
         self.project_settings['includes']['regex'] = regex
+
+    def setup_project_includes_excludes(self, regex):
+        self.project_settings['includes']['excludes'] = regex
 
     def create_some_directories(self):
         directories = [
@@ -86,6 +111,10 @@ class TestUpdateIncludesFeature(WatchdogAcceptanceTest):
     def create_directories(self, dirs):
         for d in dirs:
             self.fs_observer.create_directory(d)
+        self.file_updater.update_files()
+
+    def move_directory(self, src, dest):
+        self.fs_observer.move_directory(src, dest)
         self.file_updater.update_files()
 
 if __name__ == '__main__':

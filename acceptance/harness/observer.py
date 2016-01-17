@@ -36,6 +36,11 @@ class FakeObserver(object):
         self.fs.RemoveObject(path)
         self.event_handler.on_deleted(self.create_event(src_path=path, is_directory=True))
 
+    def move_directory(self, src, dest):
+        self.fs.RemoveObject(src)
+        self.fs.CreateDirectory(dest)
+        self.event_handler.on_moved(self.create_event(src_path=src, dest_path=dest, is_directory=True))
+
     @staticmethod
     def create_event(src_path='', dest_path='', is_directory=False):
         event = mock.MagicMock()

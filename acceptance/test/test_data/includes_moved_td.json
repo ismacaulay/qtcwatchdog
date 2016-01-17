@@ -1,0 +1,32 @@
+
+{
+  "no_regex": {
+    "regex": "",
+    "excludes": "",
+    "src_dir": "src_dir",
+    "dest_dir": "dest_dir",
+
+    "expected": ["dest_dir"],
+    "expected_missing": ["src_dir"]
+  },
+
+  "moved_to_non_regex_matching": {
+    "regex": ".*(included).*",
+    "excludes": "",
+    "src_dir": "included",
+    "dest_dir": "excluded",
+
+    "expected": [],
+    "expected_missing": ["included", "excluded"]
+  },
+
+  "moved_to_excludes_matching": {
+    "regex": "",
+    "excludes": ".*(excluded).*",
+    "src_dir": "included",
+    "dest_dir": "excluded",
+
+    "expected": [],
+    "expected_missing": ["included", "excluded"]
+  }
+}
