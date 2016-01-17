@@ -4,10 +4,9 @@ import re
 
 class RegexValidator(object):
     def __init__(self, pattern, excludes):
-        # todo: handle None for pattern/excludes
-        if pattern == '':
+        if not pattern or pattern == '':
             pattern = '.*'  # match anything
-        if excludes == '':
+        if not excludes or excludes == '':
             excludes = 'a^'  # match nothing
 
         self._pattern = re.compile(pattern)
