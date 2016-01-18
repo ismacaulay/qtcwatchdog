@@ -1,13 +1,13 @@
 import os
 import unittest, mock
-from initializer import QtcFilesInitializer
+from qtcwatchdog.initializer import QtcFilesInitializer
 
 
 class TestQtcFilesInitializer(unittest.TestCase):
     def setUp(self):
         pass
 
-    @mock.patch('updater.QtcUpdater', autospec=True)
+    @mock.patch('qtcwatchdog.updater.QtcUpdater', autospec=True)
     @mock.patch('os.walk')
     def test_willAddAllFilePathsToTheUpdater(self, mock_walk, mock_updater):
         mock_walk.return_value = project_directory_structure(os.path.normpath('project/path'))
@@ -23,7 +23,7 @@ class TestQtcFilesInitializer(unittest.TestCase):
             mock.call(os.path.normpath('project/path/dir1/subfile2.txt')),
         ], any_order=True)
 
-    @mock.patch('updater.QtcUpdater', autospec=True)
+    @mock.patch('qtcwatchdog.updater.QtcUpdater', autospec=True)
     @mock.patch('os.walk')
     def test_willAddAllIncludesPathsToTheUpdater(self, mock_walk, mock_updater):
         mock_walk.side_effect = [

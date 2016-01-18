@@ -3,7 +3,7 @@ import unittest
 import os
 import mock
 
-from settings import Settings, InvalidSettingsError
+from qtcwatchdog.settings import Settings, InvalidSettingsError
 
 
 class TestSettings(unittest.TestCase):

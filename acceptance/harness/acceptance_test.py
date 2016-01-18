@@ -2,8 +2,8 @@ import os, mock
 from pyfakefs import fake_filesystem_unittest
 from observer import FakeObserver
 
-from qtcwatchdog import QtcWatchdog
-from watcher import ProjectWatcher
+from qtcwatchdog.qtcwatchdog import QtcWatchdog
+from qtcwatchdog.watcher import ProjectWatcher
 
 
 class WatchdogAcceptanceTest(fake_filesystem_unittest.TestCase):
@@ -17,17 +17,17 @@ class WatchdogAcceptanceTest(fake_filesystem_unittest.TestCase):
         self.addCleanup(self.sleep_patcher.stop)
         self.mock_sleep = self.sleep_patcher.start()
 
-        self.running_patcher = mock.patch('watcher.running')
+        self.running_patcher = mock.patch('qtcwatchdog.watcher.running')
         self.addCleanup(self.running_patcher.stop)
         self.mock_running = self.running_patcher.start()
         self.mock_running.side_effect = [True, False]
 
-        self.observer_patcher = mock.patch('watcher.Observer')
+        self.observer_patcher = mock.patch('qtcwatchdog.watcher.Observer')
         self.addCleanup(self.observer_patcher.stop)
         self.mock_observer = self.observer_patcher.start()
         self.mock_observer.return_value = self.fs_observer
 
-        self.watcher_patcher = mock.patch('qtcwatchdog.ProjectWatcher')
+        self.watcher_patcher = mock.patch('qtcwatchdog.qtcwatchdog.ProjectWatcher')
         self.addCleanup(self.watcher_patcher.stop)
         self.mock_watcher = self.watcher_patcher.start()
         self.mock_watcher.side_effect = self.save_updater

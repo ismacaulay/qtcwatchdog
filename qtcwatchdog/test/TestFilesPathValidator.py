@@ -1,5 +1,5 @@
 import unittest
-from validator import FilesPathValidator
+from qtcwatchdog.validator import FilesPathValidator
 
 
 class TestFilesPathValidator(unittest.TestCase):

@@ -1,7 +1,7 @@
 
 import unittest
 
-from validator import RegexValidator
+from qtcwatchdog.validator import RegexValidator
 
 
 class TestRegexValidator(unittest.TestCase):

@@ -12,6 +12,7 @@ class Settings(object):
 
     @property
     def project_name(self):
+        # todo: rename to just project
         return self._settings.get('project_name', os.path.basename(self.project_path))
 
     @property
