@@ -90,8 +90,6 @@ class TestUpdateIncludesFeature(WatchdogAcceptanceTest):
         self.verify_includes_contains_paths(expected)
         self.verify_includes_does_not_contain_paths(expected_missing)
 
-    # TODO: tests for if the includes file already exists (it should be truncated)
-    @unittest.skip('Not implemented yet')
     def test_willTruncateExistingIncludesFileOnInitialization(self):
         initial_paths_in_file = self.create_initial_includes_file()
         self.create_and_start_watchdog()

@@ -39,7 +39,7 @@ class WatchdogAcceptanceTest(fake_filesystem_unittest.TestCase):
 
     def setup_project_directory(self):
         self.project_settings = {
-            'project_name': 'watchdog',
+            'project': 'watchdog',
             'project_path': os.path.relpath('/project/watchdog'),
             'files': {},
             'includes': {},

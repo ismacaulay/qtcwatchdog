@@ -30,13 +30,13 @@ class TestSettings(unittest.TestCase):
             self.fail("InvalidSettingsError thrown when it shouldn't.")
 
     def test_willReturnProjectName(self):
-        project_name = 'helloworld'
+        project = 'helloworld'
         settings = anonymous_settings_dict()
-        settings['project_name'] = project_name
+        settings['project'] = project
 
         patient = Settings(settings)
 
-        self.assertEqual(patient.project_name, project_name)
+        self.assertEqual(patient.project, project)
 
     def test_willDefaultProjectNameToProjectPathBasename(self):
         settings = anonymous_settings_dict()
@@ -44,7 +44,7 @@ class TestSettings(unittest.TestCase):
 
         patient = Settings(settings)
 
-        self.assertEqual(patient.project_name, project_name)
+        self.assertEqual(patient.project, project_name)
 
     def test_willReturnFilesRegex(self):
         settings = anonymous_settings_dict()

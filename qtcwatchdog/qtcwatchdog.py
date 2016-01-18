@@ -13,8 +13,8 @@ class QtcWatchdog(object):
     def __init__(self, project_settings):
         settings = Settings(project_settings)
 
-        files_file = os.path.join(settings.project_path, '{}.files'.format(settings.project_name))
-        includes_file = os.path.join(settings.project_path, '{}.includes'.format(settings.project_name))
+        files_file = os.path.join(settings.project_path, '{}.files'.format(settings.project))
+        includes_file = os.path.join(settings.project_path, '{}.includes'.format(settings.project))
 
         files_validator = FilesPathValidator([files_file, includes_file], settings.files_regex, settings.files_excludes)
         files_file = QtcFile(files_file, files_validator)

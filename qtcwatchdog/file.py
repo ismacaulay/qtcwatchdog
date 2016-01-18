@@ -28,7 +28,8 @@ class FileWriter(object):
         self._write_cache = set()
         self._remove_cache = set()
 
-        # TODO: truncate file on creation to start with a clean slate
+        with open(self._path, 'w') as f:
+            f.truncate()
 
         self._lock = threading.Lock()
 

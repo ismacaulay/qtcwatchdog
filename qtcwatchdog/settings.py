@@ -11,9 +11,8 @@ class Settings(object):
             raise InvalidSettingsError('Project path invalid')
 
     @property
-    def project_name(self):
-        # TODO: rename to just project
-        return self._settings.get('project_name', os.path.basename(self.project_path))
+    def project(self):
+        return self._settings.get('project', os.path.basename(self.project_path))
 
     @property
     def project_path(self):
