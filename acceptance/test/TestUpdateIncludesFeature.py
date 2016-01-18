@@ -80,7 +80,15 @@ class TestUpdateIncludesFeature(WatchdogAcceptanceTest):
         self.verify_includes_contains_paths(expected)
         self.verify_includes_does_not_contain_paths(expected_missing)
 
-    # TODO: missing include paths tests
+    @file_data('test_data/includes_include_paths_td.json')
+    def test_willAddIncludePathsToIncludesFileIfSettingsAllow(self, regex, excludes, includes, expected, expected_missing):
+        self.setup_project_includes_regex(regex)
+        self.setup_project_includes_excludes(excludes)
+        self.setup_project_includes_paths(includes)
+        self.create_and_start_watchdog()
+
+        self.verify_includes_contains_paths(expected)
+        self.verify_includes_does_not_contain_paths(expected_missing)
 
     # TODO: tests for if the includes file already exists (it should be truncated)
     @unittest.skip('Not implemented yet')
@@ -107,6 +115,11 @@ class TestUpdateIncludesFeature(WatchdogAcceptanceTest):
 
     def setup_project_includes_excludes(self, regex):
         self.project_settings['includes']['excludes'] = regex
+
+    def setup_project_includes_paths(self, paths):
+        for path in paths:
+            self.fs.CreateDirectory(path)
+        self.project_settings['includes']['paths'] = paths
 
     def create_initial_includes_file(self):
         initial_paths = [
