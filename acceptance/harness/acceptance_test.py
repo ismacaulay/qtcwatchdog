@@ -71,6 +71,12 @@ class WatchdogAcceptanceTest(fake_filesystem_unittest.TestCase):
         self.watchdog = QtcWatchdog(self.project_settings)
         self.watchdog.start()
 
+    def create_file_with_contents(self, path, contents):
+        try:
+            self.fs.RemoveObject(path)
+        finally:
+            self.fs.CreateFile(path, contents=contents)
+
     def save_updater(self, project_path_arg, updater_arg):
         self.file_updater = updater_arg
         return ProjectWatcher(project_path_arg, updater_arg)

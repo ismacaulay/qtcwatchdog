@@ -82,6 +82,12 @@ class TestUpdateFilesFeature(WatchdogAcceptanceTest):
         self.verify_files_does_not_contain_paths(expected_missing)
 
     # TODO: tests for if the files file already exists (it should be truncated)
+    @unittest.skip('Not implemented yet')
+    def test_willTruncateExistingFilesFileOnInitialization(self):
+        initial_paths_in_file = self.create_initial_files_file()
+        self.create_and_start_watchdog()
+
+        self.verify_files_does_not_contain_paths(initial_paths_in_file)
 
     def verify_files_contains_paths(self, paths):
         (files_contains, msg) = self.file_contains_paths(self.files_file, paths)
@@ -100,6 +106,14 @@ class TestUpdateFilesFeature(WatchdogAcceptanceTest):
 
     def setup_project_files_excludes(self, regex):
         self.project_settings['files']['excludes'] = regex
+
+    def create_initial_files_file(self):
+        initial_paths = [
+            'this/is/a/path',
+            'this/is/another/path'
+        ]
+        self.create_file_with_contents(self.files_file, contents='\n'.join(initial_paths))
+        return initial_paths
 
     def create_files(self, files):
         for f in files:

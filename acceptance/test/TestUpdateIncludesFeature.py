@@ -81,7 +81,14 @@ class TestUpdateIncludesFeature(WatchdogAcceptanceTest):
         self.verify_includes_does_not_contain_paths(expected_missing)
 
     # TODO: missing include paths tests
+
     # TODO: tests for if the includes file already exists (it should be truncated)
+    @unittest.skip('Not implemented yet')
+    def test_willTruncateExistingIncludesFileOnInitialization(self):
+        initial_paths_in_file = self.create_initial_includes_file()
+        self.create_and_start_watchdog()
+
+        self.verify_includes_does_not_contain_paths(initial_paths_in_file)
 
     def verify_includes_contains_paths(self, paths):
         (contains, msg) = self.file_contains_paths(self.includes_file, paths)
@@ -100,6 +107,14 @@ class TestUpdateIncludesFeature(WatchdogAcceptanceTest):
 
     def setup_project_includes_excludes(self, regex):
         self.project_settings['includes']['excludes'] = regex
+
+    def create_initial_includes_file(self):
+        initial_paths = [
+            'this/is/a/path',
+            'this/is/another/path'
+        ]
+        self.create_file_with_contents(self.includes_file, contents='\n'.join(initial_paths))
+        return initial_paths
 
     def create_some_directories(self):
         directories = [
