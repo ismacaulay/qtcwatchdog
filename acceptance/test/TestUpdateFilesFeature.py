@@ -81,6 +81,8 @@ class TestUpdateFilesFeature(WatchdogAcceptanceTest):
         self.verify_files_contains_paths(expected)
         self.verify_files_does_not_contain_paths(expected_missing)
 
+    # TODO: tests for if the files file already exists (it should be truncated)
+
     def verify_files_contains_paths(self, paths):
         (files_contains, msg) = self.file_contains_paths(self.files_file, paths)
         self.assertTrue(files_contains, msg)
