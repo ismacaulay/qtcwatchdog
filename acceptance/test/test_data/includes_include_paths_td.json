@@ -1,0 +1,55 @@
+
+{
+  "no_regex": {
+    "regex": "",
+    "excludes": "",
+    "includes": [
+      "include",
+      "include/sub_dir",
+      "include/sub_dir/sub_sub_dir"
+    ],
+
+    "expected": [
+      "include",
+      "include/sub_dir",
+      "include/sub_dir/sub_sub_dir"
+    ],
+    "expected_missing": []
+  },
+
+  "include_not_regex_matching": {
+    "regex": ".*(include).*",
+    "excludes": "",
+    "includes": [
+      "include",
+      "include/sub_dir",
+      "exclude/sub_dir/sub_sub_dir"
+    ],
+
+    "expected": [
+      "include",
+      "include/sub_dir"
+    ],
+    "expected_missing": [
+      "exclude/sub_dir/sub_sub_dir"
+    ]
+  },
+
+  "moved_to_excludes_matching": {
+    "regex": "",
+    "excludes": ".*(exclude).*",
+    "includes": [
+      "include",
+      "include/sub_dir",
+      "include/exclude/sub_sub_dir"
+    ],
+
+    "expected": [
+      "include",
+      "include/sub_dir"
+    ],
+    "expected_missing": [
+      "include/exclude/sub_sub_dir"
+    ]
+  }
+}
