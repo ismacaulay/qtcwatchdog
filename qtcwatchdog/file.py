@@ -28,7 +28,7 @@ class FileWriter(object):
         self._write_cache = set()
         self._remove_cache = set()
 
-        # todo: truncate file on creation to start with a clean slate
+        # TODO: truncate file on creation to start with a clean slate
 
         self._lock = threading.Lock()
 

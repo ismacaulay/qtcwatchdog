@@ -80,7 +80,7 @@ class TestUpdateIncludesFeature(WatchdogAcceptanceTest):
         self.verify_includes_contains_paths(expected)
         self.verify_includes_does_not_contain_paths(expected_missing)
 
-    # todo: missing include paths tests
+    # TODO: missing include paths tests
 
     def verify_includes_contains_paths(self, paths):
         (contains, msg) = self.file_contains_paths(self.includes_file, paths)
