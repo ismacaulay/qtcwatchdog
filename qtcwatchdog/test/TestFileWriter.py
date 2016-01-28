@@ -165,6 +165,15 @@ class TestFileWriter(unittest.TestCase):
 
         self.mock_open.assert_not_called()
 
+    def test_willNotWriteAndRemoveTheSamePaths(self):
+        patient = self.create_patient()
+
+        patient.remove('dont/write/this/path')
+        patient.write('dont/write/this/path')
+        patient.process_caches()
+
+        self.mock_open.assert_not_called()
+
     def file_data(self):
         return [
             'hello/world.txt\n',

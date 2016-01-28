@@ -40,16 +40,14 @@ class FileWriter(object):
 
     def remove(self, path):
         self._lock.acquire()
-        if path in self._write_cache:
-            self._write_cache.remove(path)
         self._remove_cache.add(str(path))
         self._lock.release()
 
     def process_caches(self):
         self._lock.acquire()
-        write_cache = set(self._write_cache)
+        write_cache = self._write_cache.difference(self._remove_cache)
+        remove_cache = self._remove_cache.difference(self._write_cache)
         self._write_cache = set()
-        remove_cache = list(self._remove_cache)
         self._remove_cache = set()
         self._lock.release()
 
