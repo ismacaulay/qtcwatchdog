@@ -2,3 +2,4 @@ watchdog
 pyfakefs
 mock
 ddt
+nose
